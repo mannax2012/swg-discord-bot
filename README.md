@@ -25,20 +25,22 @@ For instance:
 ```json
 {
     "SWG": {
-        "LoginAddress": "my.server.com",
+        "LoginAddress": "swg.servername.com",
         "LoginPort": 44453,
-        "Username": "SWGAccount",
-        "Password": "SWGPassword",
+	"PingPort" : 7,
+        "Username": "SWG-Account-Name",
+        "Password": "SWG-Account-Password",
         "Character": "Discord",
-        "ChatRoom": "Genchat"
+        "ChatRoom": "SWG.ServerName.Chatroom"
     },
     "Discord": {
-        "BotName": "RoC-Bot",
-        "BotToken": "<Bot-token-from-discordapp.com/developers>",
-        "ServerName": "SWG Awesomeness",
-        "ChatChannel": "general",
-        "NotificationChannel": "admin-lounge",
-        "NotificationMentionRole": "Staff"
+        "BotName": "SWG Chat Bot",
+        "PresenceName": "App Name in Discord",
+        "BotToken": "Bot Token from Discord App Webpage",
+        "ServerName": "DiscordServerName",
+        "ChatChannel": "DiscordChatChannel",
+        "NotificationChannel": "staff",
+        "NotificationMentionRole": "@staff"
     }
 }
 ```
