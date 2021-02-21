@@ -25,40 +25,49 @@ For instance:
 ```json
 {
     "SWG": {
-        "LoginAddress": "swg.servername.com",
+        "LoginAddress": "SWGserveraddress",
+	"SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
 	"PingPort" : 7,
-        "Username": "SWG-Account-Name",
-        "Password": "SWG-Account-Password",
-        "Character": "Discord",
-        "ChatRoom": "SWG.ServerName.Chatroom"
+        "Username": "SWG Account Name",
+        "Password": "SWG Account Password",
+        "Character": "SWG Bot Character",
+        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName"
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
-        "PresenceName": "App Name in Discord",
-        "BotToken": "Bot Token from Discord App Webpage",
-        "ServerName": "DiscordServerName",
-        "ChatChannel": "DiscordChatChannel",
-        "NotificationChannel": "staff",
-        "NotificationMentionRole": "@staff"
-    }
+        "PresenceName": "Application Name to Display in Discord",
+        "BotToken": "Bot token from Discord App Page,
+        "ServerName": "Discord Server Name",
+        "ChatChannel": "chatchannel",
+        "NotificationChannel": "staffchannel",
+        "NotificationMentionRole": "staff",
+	"NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user"
+    },
+    "verboseLogging": false
 }
+
 ```
 
 | Field | Explanation |
 | ------ | ------ |
 | SWG.LoginAddress | The Address of the SWGEmu login server.  This is what you point your launcher at. |
+| SWG.SWGServerName| Uses for messages in the app |
 | SWG.LoginPort | The Port of the SWGEmu login server.  This is usually 44453 |
+"PingPort" : 7,  Ping port for SWG server |
 | SWG.Username | The Username you type in the SWG splash screen. |
 | SWG.Password | The Password you type in the SWG splash screen. |
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
 | SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
 | Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
+| Discord.PresenceName | The bot will show "Playing PresenceName" |
 | Discord.BotToken | The App Bot User Token from the discordapp Bot page |
 | Discord.ServerName | The name of the discord server the Bot is monitoring |
 | Discord.ChatChannel | The name of the discord channel the Bot should replicate to/from |
 | Discord.NotificationChannel | The name of the discord channel that server up/down events should be posted to |
 | Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications |
+| Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user |
+| verboseLogging| Enable or disable verbose console logging |
 
 Finally run the bot with
 

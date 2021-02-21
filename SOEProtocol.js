@@ -1,16 +1,17 @@
 const zlib = require('zlib');
 const crypto = require('crypto');
-
+const config = require('./config');
+const verboseLogging = config.verboseLogging;
 const session = {lastAck: -1, lastSequence: -1};
 
 var fragments = null, fragmentLength;
 var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
-    if (!Buffer.isBuffer(buf)) buf = new Buffer(buf, "hex");
+    if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf, "hex");
     var SOEHeader = buf.readUInt16BE(0);
     if (SOEHeader > 0x2 && !decrypted) buf = Decrypt(buf);
     var len, opcode;
-    console.log(buf.toString('hex'));
-    console.log(buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
+    if (verboseLogging) console.log(buf.toString('hex'));
+    if (verboseLogging) console.log(buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
     if (SOEHeader == 0x1) {
         return [{type: "SessionRequest",
             CRCLength: buf.readUInt32BE(2),
@@ -78,7 +79,7 @@ var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
             fragments = buf.slice(8,-3);
         } else {
             fragments = Buffer.concat([fragments, buf.slice(4, -3)]);
-            console.log("fragment", fragments.length , "/", fragmentLength);
+            if (verboseLogging) console.log("fragment", fragments.length , "/", fragmentLength);
             if (fragments.length == fragmentLength) {
                 buf = fragments;
                 fragments = null;
@@ -90,7 +91,7 @@ var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
                 var ret = [DecodeSWGPacket[opcode](buf.slice(6))];
                 return ret;
             } else if (fragments.length > fragmentLength) {
-                console.log("extra data fragment", fragments.length , "/", fragmentLength);
+                if (verboseLogging) console.log("extra data fragment", fragments.length , "/", fragmentLength);
                 fragments = null;
             }
         }
@@ -107,7 +108,7 @@ module.exports.Encode = function(type, data) {
 
 function Decrypt(bufData)
 {
-    var decrypted = new Buffer(bufData.length);
+    var decrypted = Buffer.alloc(bufData.length);
     decrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 
     var mask = session.CRCSeed;
@@ -139,7 +140,7 @@ function Encrypt(bufData) {
         //console.log(buf.toString('utf16le'));
         var swgPacketSize = 496 - 8 - 3;
         for (var i = 4; i < bufData.length; i += swgPacketSize) {
-            var head = new Buffer(i == 4 ? 8 : 4);
+            var head = Buffer.alloc(i == 4 ? 8 : 4);
             head.writeUInt16BE(0xd, 0);
             head.writeUInt16BE(i > 4 ? session.sequence++ : session.sequence-1, 2);
             if (i == 4) head.writeUInt32BE(bufData.length-4, 4);
@@ -154,8 +155,8 @@ function Encrypt(bufData) {
         bufData = Buffer.concat([bufData.slice(0,2), zlib.deflateSync(bufData.slice(2)), Buffer.from([1,0,0])]);
     else
         bufData = Buffer.concat([bufData, Buffer.from([0,0,0])]);
-    console.log(bufData.toString('hex'));
-    var encrypted = new Buffer(bufData.length);
+    if (verboseLogging) console.log(bufData.toString('hex'));
+    var encrypted = Buffer.alloc(bufData.length);
     encrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 
     var mask = session.CRCSeed;
@@ -177,7 +178,7 @@ function Encrypt(bufData) {
 }
 
 function EncodeSOEHeader(opcode, operands) {
-    var buf = new Buffer(10);
+    var buf = Buffer.alloc(10);
     buf.writeUInt16BE(9, 0);
     buf.writeUInt16BE(session.sequence++, 2);
     buf.writeUInt16LE(operands, 4);
@@ -189,7 +190,7 @@ DecodeSWGPacket = {};
 EncodeSWGPacket = {};
 EncodeSWGPacket["Ack"] = function(data) {
     if (session.lastAck >= session.lastSequence) return false;
-    var buf = new Buffer(4);
+    var buf = Buffer.alloc(4);
     buf.writeUInt16BE(0x15, 0);
     buf.writeUInt16BE(session.lastSequence, 2);
     session.lastAck = session.lastSequence;
@@ -197,14 +198,14 @@ EncodeSWGPacket["Ack"] = function(data) {
 }
 
 EncodeSWGPacket["NetStatusRequest"] = function(data) {
-    var buf = new Buffer(4);
+    var buf = Buffer.alloc(4);
     buf.writeUInt16BE(0x7, 0);
     buf.writeUInt16BE(0, 2);
     return Encrypt(buf);
 }
 
 EncodeSWGPacket["SessionRequest"] = function() {
-    var buf = new Buffer(14);
+    var buf = Buffer.alloc(14);
     buf.writeUInt16BE(1, 0);
     buf.writeUInt32BE(2, 2);
     buf.writeUInt32BE(crypto.randomBytes(4).readUInt32BE(0), 6);
@@ -224,7 +225,7 @@ DecodeSWGPacket[0xd5899226] = function(data) {
 }
 EncodeSWGPacket["ClientIdMsg"] = function(data) {
     var header = EncodeSOEHeader(0xd5899226, 3);
-    var buf = new Buffer(496);
+    var buf = Buffer.alloc(496);
     buf.fill(0,0,4);
     buf.off = 4;
     buf.writeUInt32LE(session.SessionKey.length, 4);
@@ -265,7 +266,7 @@ DecodeSWGPacket[0xb5098d76] = function(data) {
 }
 EncodeSWGPacket["SelectCharacter"] = function(data) {
     var header = EncodeSOEHeader(0xb5098d76, 2);
-    var buf = new Buffer(8);
+    var buf = Buffer.alloc(8);
     data.CharacterID.copy(buf,0);
     buf = Buffer.concat([header, buf]);
     return Encrypt(buf);
@@ -282,7 +283,7 @@ DecodeSWGPacket[0x41131f96] = function(data) {
 }
 EncodeSWGPacket["LoginClientID"] = function(data) {
     var header = EncodeSOEHeader(0x41131f96, 4);
-    var buf = new Buffer(496);
+    var buf = Buffer.alloc(496);
     buf.off = 0;
     writeAString(buf, data.Username);
     writeAString(buf, data.Password);
@@ -401,7 +402,7 @@ DecodeSWGPacket[0x20e4dbe3] = function(data) {
 }
 messageCounter = 1;
 EncodeSWGPacket["ChatSendToRoom"] = function(data) {
-    var buf = Buffer.concat([EncodeSOEHeader(0x20e4dbe3, 5), new Buffer(data.Message.length * 2 + 16)]);
+    var buf = Buffer.concat([EncodeSOEHeader(0x20e4dbe3, 5), Buffer.alloc(data.Message.length * 2 + 16)]);
     buf.off = 10;
     writeUString(buf, data.Message);
     buf.fill(0, buf.off, buf.off+4);
@@ -413,7 +414,7 @@ EncodeSWGPacket["ChatSendToRoom"] = function(data) {
 
 tellCounter = 1;
 EncodeSWGPacket["ChatInstantMessageToCharacter"] = function(data) {
-    var buf = Buffer.concat([EncodeSOEHeader(0x84bb21f7, 5), new Buffer(21 + data.ServerName.length + data.PlayerName.length + data.Message.length * 2)]);
+    var buf = Buffer.concat([EncodeSOEHeader(0x84bb21f7, 5), Buffer.alloc(21 + data.ServerName.length + data.PlayerName.length + data.Message.length * 2)]);
     buf.off = 10;
     writeAString(buf, "SWG");
     writeAString(buf, data.ServerName);
@@ -475,7 +476,7 @@ DecodeSWGPacket[0xbc6bddf2] = function(data) {
 }
 EncodeSWGPacket["ChatEnterRoomById"] = function(data) {
     var header = EncodeSOEHeader(0xbc6bddf2, 3);
-    var buf = new Buffer(8);
+    var buf = Buffer.alloc(8);
     buf.writeUInt32LE(session.RequestID++, 0);
     buf.writeUInt32LE(data.RoomID, 4);
     buf = Buffer.concat([header, buf]);
@@ -503,7 +504,7 @@ DecodeSWGPacket[0x9cf2b192] = function(data) {
 }
 EncodeSWGPacket["ChatQueryRoom"] = function(data) {
     var header = EncodeSOEHeader(0x9cf2b192, 3);
-    var buf = new Buffer(496);
+    var buf = Buffer.alloc(496);
     buf.writeUInt32LE(session.RequestID++, 0);
     buf.off = 4;
     writeAString(buf, data.RoomPath);
@@ -645,7 +646,7 @@ DecodeSWGPacket[0x35366bed] = function(data) {
 }
 EncodeSWGPacket["ChatCreateRoom"] = function(data) {
     var header = EncodeSOEHeader(0x35366bed, 7);
-    var buf = new Buffer(496);
+    var buf = Buffer.alloc(496);
     buf.writeUInt8(1, 0);
     buf.writeUInt8(0, 1);
     buf.off = 4;

@@ -1,20 +1,24 @@
 {
     "SWG": {
-        "LoginAddress": "swg.servername.com",
+        "LoginAddress": "SWGserveraddress",
+	"SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
 	"PingPort" : 7,
-        "Username": "SWG-Account-Name",
-        "Password": "SWG-Account-Password",
-        "Character": "Discord",
-        "ChatRoom": "SWG.ServerName.Chatroom"
+        "Username": "SWG Account Name",
+        "Password": "SWG Account Password",
+        "Character": "SWG Bot Character",
+        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName"
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
-        "PresenceName": "App Name in Discord",
-        "BotToken": "Bot Token from Discord App Webpage",
-        "ServerName": "DiscordServerName",
-        "ChatChannel": "DiscordChatChannel",
-        "NotificationChannel": "staff",
-        "NotificationMentionRole": "@staff"
-    }
+        "PresenceName": "Application Name to Display in Discord",
+        "BotToken": "Bot token from Discord App Page,
+        "ServerName": "Discord Server Name",
+        "ChatChannel": "chatchannel",
+        "NotificationChannel": "staffchannel",
+        "NotificationMentionRole": "staff",
+	"NotificationMentionUserID": "If role is blank, can put a Discord user ID here"
+    },
+    "verboseLogging": false
 }
+
