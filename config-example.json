@@ -1,0 +1,20 @@
+{
+    "SWG": {
+        "LoginAddress": "swg.servername.com",
+        "LoginPort": 44453,
+	"PingPort" : 7,
+        "Username": "SWG-Account-Name",
+        "Password": "SWG-Account-Password",
+        "Character": "Discord",
+        "ChatRoom": "SWG.ServerName.Chatroom"
+    },
+    "Discord": {
+        "BotName": "SWG Chat Bot",
+        "PresenceName": "App Name in Discord",
+        "BotToken": "Bot Token from Discord App Webpage",
+        "ServerName": "DiscordServerName",
+        "ChatChannel": "DiscordChatChannel",
+        "NotificationChannel": "staff",
+        "NotificationMentionRole": "@staff"
+    }
+}

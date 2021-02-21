@@ -1,11 +1,13 @@
 const Discord = require('discord.js');
+const Intents = require('discord.js');
 const SWG = require('./swgclient');
 const config = require('./config');
 SWG.login(config.SWG);
 
 var client, server, notif, chat, notifRole;
 function discordBot() {
-    client = new Discord.Client();
+    //client = new Discord.Client();
+    client = new Discord.Client({ws:{intents:Intents.ALL}});
 
     client.on('message', message => {
         if (message.content.startsWith('!server')) {
@@ -13,7 +15,8 @@ function discordBot() {
         }
         if (message.content.startsWith('!fixchat')) {
             message.reply("rebooting chat bot");
-            process.exit(0);
+	    setTimeout(() => { process.exit(0); }, 500);
+//          process.exit(0);
         }
         if (message.content.startsWith('!pausechat')) {
             message.reply(SWG.paused ? "unpausing" : "pausing");
@@ -21,11 +24,11 @@ function discordBot() {
         }
         if (message.channel.name != config.Discord.ChatChannel) return;
         if (message.author.username == config.Discord.BotName) return;
-        SWG.sendChat(message.cleanContent, server.members.get(message.author.id).displayName);
+	SWG.sendChat(message.cleanContent, server.members.get(message.author.id).displayName);
     });
 
     client.on('disconnect', event => {
-        try {notif.send("RoC-Bot disconnected");}catch(ex){}
+        try {notif.send("Infinity-Bot disconnected");}catch(ex){}
         client = server = notif = chat = notifRole = null;
         console.log("Discord disconnect: " + JSON.stringify(event,null,2));
         setTimeout(discordBot, 1000);
@@ -33,7 +36,7 @@ function discordBot() {
 
     client.login(config.Discord.BotToken)
         .then(t => {
-            client.user.setPresence({ status: "online", game: {name: "Progor-Chat"}});
+	    client.user.setPresence({game: {name:config.Discord.PresenceName}, status: "online"});
             server = client.guilds.find("name", config.Discord.ServerName);
             notif = server.channels.find("name", config.Discord.NotificationChannel);
             chat = server.channels.find("name", config.Discord.ChatChannel);
@@ -54,10 +57,6 @@ SWG.serverUp = function() {
     if (notif) notif.send(notifRole + " server UP!");
 }
 
-SWG.reconnected = function() {
-    if (chat) chat.send("chat bot reconnected");
-}
-
 SWG.recvChat = function(message, player) {
     console.log("sending chat to discord " + player + ": " + message);
     if (chat) chat.send("**" + player + ":**  " + message);
@@ -66,7 +65,7 @@ SWG.recvChat = function(message, player) {
 
 SWG.recvTell = function(from, message) {
     console.log("received tell from: " + from + ": " + message);
-    if (from != config.SWG.Character) SWG.sendTell(from, "Hi!");
+    if (from != config.SWG.Character) SWG.sendTell(from, "Hi! I don't chat to strangers.. sorry xx");
 }
 
 setInterval(() => SWG.sendTell(config.SWG.Character, "ping"), 30000);

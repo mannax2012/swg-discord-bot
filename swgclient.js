@@ -126,7 +126,7 @@ function Login() {
 
     server.Address = server.LoginAddress;
     server.Port = server.LoginPort;
-    server.PingPort = undefined;
+    server.PingPort = server.PingPort;
 
     socket = dgram.createSocket('udp4');
     socket.on('message', handleMessage);
