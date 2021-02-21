@@ -37,7 +37,7 @@ For instance:
     "Discord": {
         "BotName": "SWG Chat Bot",
         "PresenceName": "Application Name to Display in Discord",
-        "BotToken": "Bot token from Discord App Page,
+        "BotToken": "Bot token from Discord App Page",
         "ServerName": "Discord Server Name",
         "ChatChannel": "chatchannel",
         "NotificationChannel": "staffchannel",
