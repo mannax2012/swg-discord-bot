@@ -5,7 +5,7 @@ const config = require('./config');
 const verboseLogging = config.verboseLogging;
 SWG.login(config.SWG);
 
-var client, server, notif, chat, notifRole, notifUser;
+var client, server, notif, chat, notifRole;
 function discordBot() {
     //client = new Discord.Client();
     client = new Discord.Client({ws:{intents:Intents.ALL}});
