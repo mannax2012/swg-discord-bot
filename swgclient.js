@@ -103,7 +103,7 @@ handlePacket["ChatRoomList"] = function(packet) {
     }
 }
 handlePacket["ChatOnEnteredRoom"] = function(packet) {
-    console.log(JSON.stringify(packet, null, 2));
+    if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
     if (packet.RoomID == server.ChatRoomID && packet.PlayerName == server.Character) {
         if (!module.exports.isConnected) {
             module.exports.isConnected = true;
