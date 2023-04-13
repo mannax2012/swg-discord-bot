@@ -1,2 +1,3 @@
 #!/bin/bash
-forever --minUptime 1000 --spinSleepTime 5000 -p /home/vagrant/chatbot start discordbot.js
+cd /home/infinity/workspace/chatbot 
+pm2 start discordbot.js -o ./console.log -e ./error.log

@@ -1,67 +1,81 @@
 const Discord = require('discord.js');
-const Intents = require('discord.js');
-const SWG = require('./swgclient');
-const config = require('./config');
+const { Client, Events, GatewayIntentBits, Partials } = require('discord.js');
+const SWG = require('./swgclient.js');
+const config = require('./config.json');
 const verboseLogging = config.verboseLogging;
 SWG.login(config.SWG);
 
-var client, server, notif, chat, notifRole;
-function discordBot() {
-    //client = new Discord.Client();
-    client = new Discord.Client({ws:{intents:Intents.ALL}});
+//Make sure these are global
+var server, chat, notif, notifRole;
 
-    client.on('message', message => {
-	var sender;
-	if (message.channel.name == config.Discord.ChatChannel)
-		sender = server.members.get(message.author.id).displayName;
-	else
-		sender = message.author.username;
-        if (message.content.startsWith('!server')) {
-            message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
-        }
-        if (message.content.startsWith('!fixchat')) {
-            message.reply("rebooting chat bot");
-	    console.log("Received !fixchat request from " + sender);
-	    setTimeout(() => { process.exit(0); }, 500);
-        }
-        if (message.content.startsWith('!pausechat')) {
-            message.reply(SWG.paused ? "unpausing" : "pausing");
-	    console.log("Received 1pausechat request from " + sender);
-            SWG.paused = !SWG.paused;
-        }
-        if (message.channel.name != config.Discord.ChatChannel) return;
-        if (message.author.username == config.Discord.BotName) return;
-	SWG.sendChat(message.cleanContent, sender);
-    });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.DirectMessages,
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
+    partials: [Partials.Channel]
+});
 
-    client.on('disconnect', event => {
-        try {notif.send(config.Discord.BotName + " disconnected");}catch(ex){}
-        client = server = notif = chat = notifRole = null;
-        console.log("Discord disconnect: " + JSON.stringify(event,null,2));
-        setTimeout(discordBot, 1000);
-    });
+client.login(config.Discord.BotToken)
 
-    client.login(config.Discord.BotToken)
-        .then(t => {
-	    client.user.setPresence({game: {name:config.Discord.PresenceName}, status: "online"});
-	    server = client.guilds.find(g => g.name === config.Discord.ServerName);
-//	    let test = server.members.find(m => m.displayName === "MrObvious");
-//	    console.log("Find Test = " + test);
-	    notif = server.channels.find(c => c.name === config.Discord.NotificationChannel);
-	    chat = server.channels.find(c => c.name === config.Discord.ChatChannel);	
-            notifRole = server.roles.find(r => r.name === config.Discord.NotificationMentionRole);
-	    if (!notifRole) notifRole = "<@" + config.Discord.NotificationMentionUserID + ">"; 
-        })
-        .catch(reason => {
-            console.log(reason);
-            setTimeout(discordBot, 1000);
-        });
+// When the client is ready, run this code (only once)
+client.once(Events.ClientReady, c => {
+    console.log(`Ready! Logged in as ${c.user.tag}`);
+    client.user.setPresence({game: {name:config.Discord.PresenceName}, status: "online"});
+    server = client.guilds.cache.get(config.Discord.ServerID);
+    chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
+    notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
+    notifRole = server.roles.cache.find(nr => nr.name === config.Discord.NotificationMentionRole);
+    if (!notifRole) {
+        notifRole = "<@" + config.Discord.NotificationMentionUserID + ">";
+    }
+});
+
+client.on("messageCreate", async (message) => {
+if (message.author.username == config.Discord.BotName) {
+    return;
+}
+var sender;
+if (message.channel.name == config.Discord.ChatChannel) {
+    sender = server.members.cache.get(message.author.id).displayName;
+}
+else {
+    sender = message.author.username;
+}
+if (message.content.startsWith('!server')) {
+    message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
+}
+if (message.content.startsWith('!fixchat')) {
+    message.reply("rebooting chat bot");
+    console.log("Received !fixchat request from " + sender);
+    setTimeout(() => { process.exit(0); }, 500);
+}
+if (message.content.startsWith('!pausechat')) {
+    message.reply(SWG.paused ? "unpausing" : "pausing");
+    console.log("Received 1pausechat request from " + sender);
+    SWG.paused = !SWG.paused;
 }
 
-discordBot();
+if (message.channel.name != config.Discord.ChatChannel) {
+    return;
+}
+SWG.sendChat(message.cleanContent, sender);
+});
+
+client.on('disconnect', event => {
+    try {notif.send(config.Discord.BotName + " disconnected");}catch(ex){}
+    client = server = notif = chat = notifRole = null;
+    console.log("Discord disconnect: " + JSON.stringify(event,null,2));
+    setTimeout(() => { process.exit(0); }, 500);
+    //setTimeout(discordBot, 1000);  Not going to automatically connect due to PM2 so will will just exit when bot disconnects
+});
 
 SWG.serverDown = function() {
-    if (notif) notif.send(notifRole + " The server " + config.SWG.SWGServerName + " is DOWN!");
+    if (notif) {
+        notif.send(notifRole + " The server " + config.SWG.SWGServerName + " is DOWN!");
+    }
 }
 
 SWG.serverUp = function() {
@@ -69,9 +83,15 @@ SWG.serverUp = function() {
 }
 
 SWG.recvChat = function(message, player) {
-    if (verboseLogging) console.log("sending chat to Discord " + player + ": " + message);
-    if (chat) chat.send("**" + player + ":**  " + message);
-    else console.log("discord disconnected");
+    if (verboseLogging) {
+        console.log("sending chat to Discord " + player + ": " + message);
+    }
+    if (chat) {
+        chat.send("**" + player + ":**  " + message);
+    }
+    else {
+        console.log("Discord disconnected");
+    }
 }
 
 SWG.recvTell = function(from, message) {

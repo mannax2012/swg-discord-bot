@@ -13,7 +13,7 @@
         "BotName": "SWG Chat Bot",
         "PresenceName": "Application Name to Display in Discord",
         "BotToken": "Bot token from Discord App Page",
-        "ServerName": "Discord Server Name",
+        "ServerID": "Discord Server ID",
         "ChatChannel": "chatchannel",
         "NotificationChannel": "staffchannel",
         "NotificationMentionRole": "staff",
