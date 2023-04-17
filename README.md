@@ -72,7 +72,7 @@ For instance:
 Finally run the bot with:
 
 ```sh
-node discordbot.js
+node swgchatbot.js
 ```
 
 Better yet, to handle any unexpected errors get forever or PM2
@@ -90,13 +90,13 @@ sudo npm install pm2 -g
 and run with
 
 ```sh
-forever start discordbot.js
+forever start swgchatbot.js
 ```
 
 or
 
 ```sh
-pm2 start discordbot.js
+pm2 start swgchatbot.js
 ```
 
 Any issues?  Please report to SWG Infinity developer team.
