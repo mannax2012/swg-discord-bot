@@ -6,7 +6,7 @@ const verboseLogging = config.verboseLogging;
 SWG.login(config.SWG);
 
 //Make sure these are global
-var server, chat, notif, notifRole;
+var server, chat, notif, notifRole, noRole;
 
 const client = new Client({
     intents: [
@@ -28,8 +28,9 @@ client.once(Events.ClientReady, c => {
     chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
     notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
     notifRole = server.roles.cache.find(nr => nr.name === config.Discord.NotificationMentionRole);
+    noRole = notifRole;
     if (!notifRole) {
-        notifRole = "<@" + config.Discord.NotificationMentionUserID + ">";
+        notifRole = config.Discord.NotificationMentionUserID;
     }
 });
 
@@ -74,12 +75,22 @@ client.on('disconnect', event => {
 
 SWG.serverDown = function() {
     if (notif) {
-        notif.send(notifRole + " The server " + config.SWG.SWGServerName + " is DOWN!");
+        if (noRole) //Have a role, send to that
+            prefix = "<@&"
+        else
+            prefix = "<@"
+        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is DOWN!");
     }
 }
 
 SWG.serverUp = function() {
-    if (notif) notif.send(notifRole + " The server " + config.SWG.SWGServerName + " is UP!");
+    if (notif) {
+        if (noRole) //Have a role, send to that
+            prefix = "<@&"
+        else
+            prefix = "<@"
+        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is UP!");
+    }
 }
 
 SWG.recvChat = function(message, player) {
