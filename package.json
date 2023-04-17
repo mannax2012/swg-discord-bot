@@ -3,7 +3,7 @@
   "version": "1.0.2",
   "author": "Initial by Progor, updated by SWG Infinity Developers",
   "description": "Transfer chat messages from Discord to SWG and back",
-  "main": "discordbot.js",
+  "main": "swgchatbot.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
