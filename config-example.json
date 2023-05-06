@@ -17,7 +17,9 @@
         "ChatChannel": "chatchannel",
         "NotificationChannel": "staffchannel",
         "NotificationMentionRole": "staff",
-	"NotificationMentionUserID": "If role is blank, can put a Discord user ID here"
+		"NotificationMentionUserID": "If role is blank, can put a Discord user ID here",
+        "AutoRestartTimer": 60,
+        "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.",
     },
     "verboseLogging": false
 }

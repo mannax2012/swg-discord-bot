@@ -42,7 +42,9 @@ For instance:
         "ChatChannel": "chatchannel",
         "NotificationChannel": "staffchannel",
         "NotificationMentionRole": "staff",
-	"NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user"
+	    "NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
+        "AutoRestartTimer": 60,
+        "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature."
     },
     "verboseLogging": false
 }
@@ -67,6 +69,7 @@ For instance:
 | Discord.NotificationChannel | The name of the Discord channel that server up/down events should be posted to |
 | Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications |
 | Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user |
+| Discord.AutoRestartTimer| Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature. |
 | verboseLogging| Enable or disable verbose console logging |
 
 Finally run the bot with:
