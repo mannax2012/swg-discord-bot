@@ -58,16 +58,16 @@ client.on("messageCreate", async (message) => {
     else {
         sender = message.author.username;
     }
-    if (message.content.startsWith('!server')) {
+    if (message.content.startsWith('!server-live')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
-    if (message.content.startsWith('!fixchat')) {
+    if (message.content.startsWith('!fixchat-live')) {
         message.reply("rebooting chat bot");
         console.log("Received !fixchat request from " + sender);
         process.exit(0);
         //setTimeout(() => { process.exit(0); }, 500);
     }
-    if (message.content.startsWith('!pausechat')) {
+    if (message.content.startsWith('!pausechat-live')) {
         message.reply(SWG.paused ? "unpausing" : "pausing");
         console.log("Received pausechat request from " + sender);
         SWG.paused = !SWG.paused;
@@ -94,7 +94,7 @@ SWG.serverDown = function() {
             prefix = "<@&"
         else
             prefix = "<@"
-        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is DOWN!");
+        notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
     }
 }
 
@@ -104,7 +104,7 @@ SWG.serverUp = function() {
             prefix = "<@&"
         else
             prefix = "<@"
-        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is UP!");
+        notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
     }
 }
 

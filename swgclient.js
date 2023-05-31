@@ -13,7 +13,7 @@ module.exports.paused = false;
 module.exports.sendChat = function(message, user) {
     if (!module.exports.isConnected) return;
     if (verboseLogging) console.log("sending chat to game: " + user + ": " + message);
-    send("ChatSendToRoom", {Message: ' \\#ff3333' + user + ': \\#ff66ff' + message, RoomID: server.ChatRoomID});
+    send("ChatSendToRoom", {Message: ' \\#ff3333' + user + ': \\#ffffff' + message, RoomID: server.ChatRoomID});
 }
 module.exports.recvChat = function(message, player) {}
 module.exports.serverDown = function() {}
