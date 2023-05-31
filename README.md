@@ -56,7 +56,7 @@ For instance:
 | SWG.LoginAddress | The Address of the SWGEmu login server.  This is what you point your launcher at. |
 | SWG.SWGServerName| Uses for messages in the app |
 | SWG.LoginPort | The Port of the SWGEmu login server.  This is usually 44453 |
-"PingPort" : 7,  Ping port for SWG server |
+| SWG.PingPort |  Ping port for SWG server |
 | SWG.Username | The Username you type in the SWG splash screen. |
 | SWG.Password | The Password you type in the SWG splash screen. |
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
@@ -101,5 +101,3 @@ or
 ```sh
 pm2 start swgchatbot.js
 ```
-
-Any issues?  Please report to SWG Infinity developer team.
