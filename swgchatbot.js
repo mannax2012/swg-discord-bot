@@ -23,7 +23,7 @@ client.login(config.Discord.BotToken)
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, c => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
-    client.user.setPresence({game: {name:config.Discord.PresenceName}, status: "online"});
+    client.user.setPresence({ activities: [{ name: config.Discord.PresenceName }], status: 'online' });
     server = client.guilds.cache.get(config.Discord.ServerID);
     chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
     notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
