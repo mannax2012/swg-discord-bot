@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { Client, Events, GatewayIntentBits, Partials } = require('discord.js');
+const { Client, Events, GatewayIntentBits, Partials, Activity } = require('discord.js');
 const SWG = require('./swgclient.js');
 const config = require('./config.json');
 const verboseLogging = config.verboseLogging;
@@ -23,7 +23,7 @@ client.login(config.Discord.BotToken)
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, c => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
-    client.user.setPresence({ activities: [{ name: config.Discord.PresenceName }], status: 'online' });
+    client.user.setPresence({ activities: [{ name: config.Discord.PresenceName, type: Activity.Watching }], status: 'online' });
     server = client.guilds.cache.get(config.Discord.ServerID);
     chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
     notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
@@ -96,6 +96,9 @@ SWG.serverDown = function() {
             prefix = "<@"
         notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
     }
+	if (chat) {
+		chat.send("The server is offline!");
+	}
 }
 
 SWG.serverUp = function() {
@@ -106,6 +109,9 @@ SWG.serverUp = function() {
             prefix = "<@"
         notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
     }
+	if (chat) {
+		chat.send("The server is online!");
+	}
 }
 
 SWG.recvChat = function(message, player) {
