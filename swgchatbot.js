@@ -64,8 +64,7 @@ client.on("messageCreate", async (message) => {
     if (message.content.startsWith('!fixchat')) {
         message.reply("rebooting chat bot");
         console.log("Received !fixchat request from " + sender);
-        process.exit(0);
-        //setTimeout(() => { process.exit(0); }, 500);
+        setTimeout(() => { process.exit(0); }, 500);  //Exit in 500 ms, allow time for reply to be sent
     }
     if (message.content.startsWith('!pausechat')) {
         message.reply(SWG.paused ? "unpausing" : "pausing");
