@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { Client, Events, GatewayIntentBits, Partials, Activity } = require('discord.js');
+const { Client, Events, GatewayIntentBits, Partials, ActivityType } = require('discord.js');
 const SWG = require('./swgclient.js');
 const config = require('./config.json');
 const verboseLogging = config.verboseLogging;
@@ -23,7 +23,7 @@ client.login(config.Discord.BotToken)
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, c => {
     console.log(`Ready! Logged in as ${c.user.tag}`);
-    client.user.setPresence({ activities: [{ name: config.Discord.PresenceName, type: Activity.Watching }], status: 'online' });
+    client.user.setPresence({ activities: [{ name: config.Discord.PresenceName, type: ActivityType.Watching }], status: 'online' });
     server = client.guilds.cache.get(config.Discord.ServerID);
     chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
     notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
@@ -58,16 +58,16 @@ client.on("messageCreate", async (message) => {
     else {
         sender = message.author.username;
     }
-    if (message.content.startsWith('!server-live')) {
+    if (message.content.startsWith('!server')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
-    if (message.content.startsWith('!fixchat-live')) {
+    if (message.content.startsWith('!fixchat')) {
         message.reply("rebooting chat bot");
         console.log("Received !fixchat request from " + sender);
         process.exit(0);
         //setTimeout(() => { process.exit(0); }, 500);
     }
-    if (message.content.startsWith('!pausechat-live')) {
+    if (message.content.startsWith('!pausechat')) {
         message.reply(SWG.paused ? "unpausing" : "pausing");
         console.log("Received pausechat request from " + sender);
         SWG.paused = !SWG.paused;
@@ -97,7 +97,7 @@ SWG.serverDown = function() {
         notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
     }
 	if (chat) {
-		chat.send("The server is offline!");
+		chat.send("The " + config.SWG.SWGServerName + " server is offline!");
 	}
 }
 
@@ -110,7 +110,7 @@ SWG.serverUp = function() {
         notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
     }
 	if (chat) {
-		chat.send("The server is online!");
+		chat.send("The " + config.SWG.SWGServerName + " server is online!");
 	}
 }
 
