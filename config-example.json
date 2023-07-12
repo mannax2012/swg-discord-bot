@@ -11,7 +11,7 @@
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
-        "PresenceName": "Application Name to Display in Discord",
+        "PresenceName": "Presence to show in Discord (Watching...)",
         "BotToken": "Bot token from Discord App Page",
         "ServerID": "Discord Server ID",
         "ChatChannel": "chatchannel",

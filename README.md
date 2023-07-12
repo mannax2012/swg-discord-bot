@@ -36,7 +36,7 @@ For instance:
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
-        "PresenceName": "Application Name to Display in Discord",
+        "PresenceName": "Presence to show in Discord (Watching...)",
         "BotToken": "Bot token from Discord App Page",
         "ServerID": "Discord Server ID",
         "ChatChannel": "chatchannel",
@@ -62,7 +62,7 @@ For instance:
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
 | SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
 | Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
-| Discord.PresenceName | The bot will show "Playing PresenceName" |
+| Discord.PresenceName | The bot will show "Watching PresenceName" |
 | Discord.BotToken | The App Bot User Token from the discordapp Bot page |
 | Discord.ServerID | The server ID of the Discord server the Bot is monitoring |
 | Discord.ChatChannel | The name of the Discord channel the Bot should replicate to/from |
