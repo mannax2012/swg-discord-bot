@@ -4,28 +4,28 @@ const config = require('./config');
 const verboseLogging = config.verboseLogging;
 
 var server = {};
-module.exports.login = function(cfg) {
+module.exports.login = function (cfg) {
     server = cfg;
     Login();
 }
 module.exports.isConnected = false;
 module.exports.paused = false;
-module.exports.sendChat = function(message, user) {
+module.exports.sendChat = function (message, user) {
     if (!module.exports.isConnected) return;
     if (verboseLogging) console.log("sending chat to game: " + user + ": " + message);
-    send("ChatSendToRoom", {Message: ' \\#ff3333' + user + ': \\#ffffff' + message, RoomID: server.ChatRoomID});
+    send("ChatSendToRoom", { Message: ' \\#ff3333' + user + ': \\#ffffff' + message, RoomID: server.ChatRoomID });
 }
-module.exports.recvChat = function(message, player) {}
-module.exports.serverDown = function() {}
-module.exports.serverUp = function() {}
-module.exports.reconnected = function() {}
-module.exports.sendTell = function(player, message) {
+module.exports.recvChat = function (message, player) { }
+module.exports.serverDown = function () { }
+module.exports.serverUp = function () { }
+module.exports.reconnected = function () { }
+module.exports.sendTell = function (player, message) {
     if (!module.exports.isConnected) return;
     if (player != config.SWG.Character)
-    	console.log("sending tell to: " + player + ": " + message);
-    send("ChatInstantMessageToCharacter", {ServerName: server.ServerName, PlayerName: player, Message: message});
+        console.log("sending tell to: " + player + ": " + message);
+    send("ChatInstantMessageToCharacter", { ServerName: server.ServerName, PlayerName: player, Message: message });
 }
-module.exports.recvTell = function(from, message) {}
+module.exports.recvTell = function (from, message) { }
 
 var lastMessageTime = new Date();
 function handleMessage(msg, info) {
@@ -42,7 +42,7 @@ function handleMessage(msg, info) {
     if (!packets) return;
     for (var packet of packets) {
         //if (!packet.type.startsWith("1b24f808"))
-            if (verboseLogging) console.log("recv: " + packet.type);
+        if (verboseLogging) console.log("recv: " + packet.type);
         if (handlePacket[packet.type])
             handlePacket[packet.type](packet);
         //else console.log("No handler for " + packet.type);
@@ -53,25 +53,25 @@ var socket;
 var loggedIn;
 
 var handlePacket = {};
-handlePacket["Ack"] = function(packet) {}
-handlePacket["SessionResponse"] = function(packet) {
+handlePacket["Ack"] = function (packet) { }
+handlePacket["SessionResponse"] = function (packet) {
     if (!loggedIn) {
-        send("LoginClientID", {Username: server.Username, Password:server.Password});
+        send("LoginClientID", { Username: server.Username, Password: server.Password });
     } else {
         send("ClientIdMsg");
     }
 }
-handlePacket["LoginClientToken"] = function(packet) {
+handlePacket["LoginClientToken"] = function (packet) {
     loggedIn = true;
 }
-handlePacket["LoginEnumCluster"] = function(packet) {
+handlePacket["LoginEnumCluster"] = function (packet) {
     server.ServerNames = packet.Servers;
 }
-handlePacket["LoginClusterStatus"] = function(packet) {
+handlePacket["LoginClusterStatus"] = function (packet) {
     if (verboseLogging) console.log(packet);
     server.Servers = packet.Servers;
 }
-handlePacket["EnumerateCharacterId"] = function(packet) {
+handlePacket["EnumerateCharacterId"] = function (packet) {
     var character = packet.Characters[server.Character];
     if (!character)
         for (var c in packet.Characters)
@@ -85,24 +85,24 @@ handlePacket["EnumerateCharacterId"] = function(packet) {
     server.ServerName = server.ServerNames[character.ServerID].Name;
     send("SessionRequest");
 }
-handlePacket["ClientPermissions"] = function(packet) {
-    send("SelectCharacter", {CharacterID: server.CharacterID});
+handlePacket["ClientPermissions"] = function (packet) {
+    send("SelectCharacter", { CharacterID: server.CharacterID });
     setTimeout(() => {
-        send("ChatCreateRoom", {RoomPath: `SWG.${server.ServerName}.${server.ChatRoom}`})
+        send("ChatCreateRoom", { RoomPath: `SWG.${server.ServerName}.${server.ChatRoom}` })
         setTimeout(() => send("CmdSceneReady"), 1000);
     }, 1000);
 }
-handlePacket["ChatRoomList"] = function(packet) {
+handlePacket["ChatRoomList"] = function (packet) {
     if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
     for (var roomID in packet.Rooms) {
         var room = packet.Rooms[roomID];
         if (room.RoomPath.endsWith(server.ChatRoom)) {
             server.ChatRoomID = room.RoomID;
-            send("ChatEnterRoomById", {RoomID: room.RoomID});
+            send("ChatEnterRoomById", { RoomID: room.RoomID });
         }
     }
 }
-handlePacket["ChatOnEnteredRoom"] = function(packet) {
+handlePacket["ChatOnEnteredRoom"] = function (packet) {
     if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
     if (packet.RoomID == server.ChatRoomID && packet.PlayerName == server.Character) {
         if (!module.exports.isConnected) {
@@ -114,12 +114,12 @@ handlePacket["ChatOnEnteredRoom"] = function(packet) {
         fails = 0;
     }
 }
-handlePacket["ChatRoomMessage"] = function(packet) {
+handlePacket["ChatRoomMessage"] = function (packet) {
     if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
     if (packet.RoomID == server.ChatRoomID && packet.CharacterName != server.Character.toLowerCase())
         module.exports.recvChat(packet.Message, packet.CharacterName);
 }
-handlePacket["ChatInstantMessageToClient"] = function(packet) {
+handlePacket["ChatInstantMessageToClient"] = function (packet) {
     module.exports.recvTell(packet.PlayerName, packet.Message);
 }
 
@@ -173,5 +173,5 @@ setInterval(() => {
 
 setInterval(() => {
     if (!module.exports.isConnected) return;
-	send("NetStatusRequest");
+    send("NetStatusRequest");
 }, 40000);

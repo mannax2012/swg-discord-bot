@@ -80,15 +80,15 @@ client.on("messageCreate", async (message) => {
 });
 
 client.on('disconnect', event => {
-    try {notifChannel.send("Bot ID: " + config.Discord.BotID + " disconnected");}catch(ex){}
+    try { notifChannel.send("Bot ID: " + config.Discord.BotID + " disconnected"); } catch (ex) { }
     client = server = notifChannel = chatChannel = notifRole = null;
-    console.log("Discord disconnect: " + JSON.stringify(event,null,2));
+    console.log("Discord disconnect: " + JSON.stringify(event, null, 2));
     //setTimeout(() => { process.exit(0); }, 500);
     process.exit(0);
     //setTimeout(discordBot, 1000);  Not going to automatically connect due to PM2 so will will just exit when bot disconnects
 });
 
-SWG.serverDown = function() {
+SWG.serverDown = function () {
     if (notifChannel) {
         if (noRole) //Have a role, send to that
             prefix = "<@&"
@@ -96,12 +96,12 @@ SWG.serverDown = function() {
             prefix = "<@"
         notifChannel.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
     }
-	if (chatChannel) {
-		chatChannel.send("The " + config.SWG.SWGServerName + " server is offline!");
-	}
+    if (chatChannel) {
+        chatChannel.send("The " + config.SWG.SWGServerName + " server is offline!");
+    }
 }
 
-SWG.serverUp = function() {
+SWG.serverUp = function () {
     if (notifChannel) {
         if (noRole) //Have a role, send to that
             prefix = "<@&"
@@ -109,12 +109,12 @@ SWG.serverUp = function() {
             prefix = "<@"
         notifChannel.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
     }
-	if (chatChannel) {
-		chatChannel.send("The " + config.SWG.SWGServerName + " server is online!");
-	}
+    if (chatChannel) {
+        chatChannel.send("The " + config.SWG.SWGServerName + " server is online!");
+    }
 }
 
-SWG.recvChat = function(message, player) {
+SWG.recvChat = function (message, player) {
     if (verboseLogging) {
         console.log("sending chat to Discord " + player + ": " + message);
     }
@@ -126,9 +126,9 @@ SWG.recvChat = function(message, player) {
     }
 }
 
-SWG.recvTell = function(from, message) {
+SWG.recvTell = function (from, message) {
     if (from != config.SWG.Character) {
-    	console.log("received tell from: " + from + ": " + message);
-    	SWG.sendTell(from, "Sorry, I don't talk to strangers ... XOXO");
+        console.log("received tell from: " + from + ": " + message);
+        SWG.sendTell(from, "Sorry, I don't talk to strangers ... XOXO");
     }
 }
