@@ -26,9 +26,9 @@ For instance:
 {
     "SWG": {
         "LoginAddress": "SWGserveraddress",
-	"SWGServerName": "SWG Server Name",
+		"SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-	"PingPort" : 7,
+		"PingPort" : 7,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
@@ -62,8 +62,8 @@ For instance:
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
 | SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
 | Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
-| Discord.PresenceName | The bot will show "Watching PresenceName" |
-| Discord.BotToken | The App Bot User Token from the discordapp Bot page |
+| Discord.PresenceName | The bot's Discord presence will show "Watching Discord.PresenceName" |
+| Discord.BotToken | The application's bot token from the Discord Developer portal |
 | Discord.ServerID | The server ID of the Discord server the Bot is monitoring |
 | Discord.ChatChannel | The name of the Discord channel the Bot should replicate to/from |
 | Discord.NotificationChannel | The name of the Discord channel that server up/down events should be posted to |
@@ -101,3 +101,7 @@ or
 ```sh
 pm2 start swgchatbot.js
 ```
+
+## Author
+
+This bot was made by Progor and adapted by Infinity Developers and Cyclone of Awakening
