@@ -1,26 +1,25 @@
 {
     "SWG": {
         "LoginAddress": "SWGserveraddress",
-	"SWGServerName": "SWG Server Name",
+        "SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-	"PingPort" : 7,
+        "PingPort": 7,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
         "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName"
     },
     "Discord": {
-        "BotName": "SWG Chat Bot",
+        "BotID": "Discord Chat Bot's ID",
         "PresenceName": "Presence to show in Discord (Watching...)",
         "BotToken": "Bot token from Discord App Page",
         "ServerID": "Discord Server ID",
-        "ChatChannel": "chatchannel",
-        "NotificationChannel": "staffchannel",
-        "NotificationMentionRole": "staff",
-		"NotificationMentionUserID": "If role is blank, can put a Discord user ID here",
+        "ChatChannelID": "Chat channel ID (e.g. ID of the general/galaxy chat channel)",
+        "NotificationChannelID": "Notification channel ID (e.g. ID of staff chat channel)",
+        "NotificationRoleID": "Notifcation role ID (e.g. ID of staff role)",
+        "NotificationUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
         "AutoRestartTimer": 60,
-        "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.",
+        "//AutoRestartTimerComment": "Auto restart timer in minutes. If omitted, there will be no auto-restart. You will need forever or pm2 to use this feature."
     },
     "verboseLogging": false
 }
-

@@ -6,7 +6,7 @@ const verboseLogging = config.verboseLogging;
 SWG.login(config.SWG);
 
 //Make sure these are global
-var server, chat, notif, notifRole, noRole, autoRestartTimer;
+var server, chatChannel, notifChannel, notifRole, noRole, autoRestartTimer;
 
 const client = new Client({
     intents: [
@@ -21,16 +21,16 @@ const client = new Client({
 client.login(config.Discord.BotToken)
 
 // When the client is ready, run this code (only once)
-client.once(Events.ClientReady, c => {
-    console.log(`Ready! Logged in as ${c.user.tag}`);
+client.on('ready', () => {
+    console.log(`Ready! Logged in as ${client.user.tag}`);
     client.user.setPresence({ activities: [{ name: config.Discord.PresenceName, type: ActivityType.Watching }], status: 'online' });
     server = client.guilds.cache.get(config.Discord.ServerID);
-    chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
-    notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
-    notifRole = server.roles.cache.find(nr => nr.name === config.Discord.NotificationMentionRole);
+    chatChannel = client.channels.cache.get(config.Discord.ChatChannelID);
+    notifChannel = client.channels.cache.get(config.Discord.NotificationChannelID);
+    notifRole = server.roles.cache.get(config.Discord.NotificationRoleID);
     noRole = notifRole;
     if (!notifRole) {
-        notifRole = config.Discord.NotificationMentionUserID;
+        notifRole = config.Discord.NotificationUserID;
     }
 
     // Restart bot every X minutes if configured
@@ -48,11 +48,11 @@ client.once(Events.ClientReady, c => {
 });
 
 client.on("messageCreate", async (message) => {
-    if (message.author.username == config.Discord.BotName) {
+    if (message.author.id == config.Discord.BotID) {
         return;
     }
     var sender;
-    if (message.channel.name == config.Discord.ChatChannel) {
+    if (message.channel.id == config.Discord.ChatChannelID) {
         sender = server.members.cache.get(message.author.id).displayName;
     }
     else {
@@ -73,15 +73,15 @@ client.on("messageCreate", async (message) => {
         SWG.paused = !SWG.paused;
     }
 
-    if (message.channel.name != config.Discord.ChatChannel) {
+    if (message.channel.id != config.Discord.ChatChannelID) {
         return;
     }
     SWG.sendChat(message.cleanContent, sender);
 });
 
 client.on('disconnect', event => {
-    try {notif.send(config.Discord.BotName + " disconnected");}catch(ex){}
-    client = server = notif = chat = notifRole = null;
+    try {notifChannel.send("Bot ID: " + config.Discord.BotID + " disconnected");}catch(ex){}
+    client = server = notifChannel = chatChannel = notifRole = null;
     console.log("Discord disconnect: " + JSON.stringify(event,null,2));
     //setTimeout(() => { process.exit(0); }, 500);
     process.exit(0);
@@ -89,28 +89,28 @@ client.on('disconnect', event => {
 });
 
 SWG.serverDown = function() {
-    if (notif) {
+    if (notifChannel) {
         if (noRole) //Have a role, send to that
             prefix = "<@&"
         else
             prefix = "<@"
-        notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
+        notifChannel.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is DOWN!");
     }
-	if (chat) {
-		chat.send("The " + config.SWG.SWGServerName + " server is offline!");
+	if (chatChannel) {
+		chatChannel.send("The " + config.SWG.SWGServerName + " server is offline!");
 	}
 }
 
 SWG.serverUp = function() {
-    if (notif) {
+    if (notifChannel) {
         if (noRole) //Have a role, send to that
             prefix = "<@&"
         else
             prefix = "<@"
-        notif.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
+        notifChannel.send(prefix + notifRole + "> The " + config.SWG.SWGServerName + " server is UP!");
     }
-	if (chat) {
-		chat.send("The " + config.SWG.SWGServerName + " server is online!");
+	if (chatChannel) {
+		chatChannel.send("The " + config.SWG.SWGServerName + " server is online!");
 	}
 }
 
@@ -118,8 +118,8 @@ SWG.recvChat = function(message, player) {
     if (verboseLogging) {
         console.log("sending chat to Discord " + player + ": " + message);
     }
-    if (chat) {
-        chat.send("**" + player + ":**  " + message);
+    if (chatChannel) {
+        chatChannel.send("**" + player + ":**  " + message);
     }
     else {
         console.log("Discord disconnected");

@@ -39,16 +39,15 @@ For instance:
         "PresenceName": "Presence to show in Discord (Watching...)",
         "BotToken": "Bot token from Discord App Page",
         "ServerID": "Discord Server ID",
-        "ChatChannel": "chatchannel",
-        "NotificationChannel": "staffchannel",
-        "NotificationMentionRole": "staff",
-	    "NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
+        "ChatChannelID": "Chat channel ID (e.g. ID of the general/galaxy chat channel)",
+        "NotificationChannelID": "Notification channel ID (e.g. ID of staff chat channel)",
+        "NotificationRoleID": "Notifcation role ID (e.g. ID of staff role)",
+	    "NotificationUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
         "AutoRestartTimer": 60,
         "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature."
     },
     "verboseLogging": false
 }
-
 ```
 
 | Field | Explanation |
@@ -61,14 +60,14 @@ For instance:
 | SWG.Password | The Password you type in the SWG splash screen. |
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
 | SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
-| Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
+| Discord.BotID | The application ID of the bot you created in discord.com/developers |
 | Discord.PresenceName | The bot's Discord presence will show "Watching Discord.PresenceName" |
 | Discord.BotToken | The application's bot token from the Discord Developer portal |
 | Discord.ServerID | The server ID of the Discord server the Bot is monitoring |
-| Discord.ChatChannel | The name of the Discord channel the Bot should replicate to/from |
-| Discord.NotificationChannel | The name of the Discord channel that server up/down events should be posted to |
-| Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications |
-| Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user |
+| Discord.ChatChannelID | The ID of the Discord channel the Bot should replicate to/from |
+| Discord.NotificationChannelID | The ID of the Discord channel that notifiable server up/down events should be posted to |
+| Discord.NotificationRoleID | The ID of the role that should be mentioned in up/down notifications |
+| Discord.NotificationUserID| If role ID is left blank, you can put a Discord user ID here to notify a single user |
 | Discord.AutoRestartTimer| Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature. |
 | verboseLogging| Enable or disable verbose console logging |
 
