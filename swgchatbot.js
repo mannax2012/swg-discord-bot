@@ -58,15 +58,16 @@ client.on("messageCreate", async (message) => {
     else {
         sender = message.author.username;
     }
-    if (message.content.startsWith('!server')) {
+    let messageContent = message.content.toLowerCase();
+    if (messageContent.startsWith('!server')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
-    if (message.content.startsWith('!fixchat')) {
+    if (messageContent.startsWith('!fixchat')) {
         message.reply("rebooting chat bot");
         console.log("Received !fixchat request from " + sender);
         setTimeout(() => { process.exit(0); }, 500);  //Exit in 500 ms, allow time for reply to be sent
     }
-    if (message.content.startsWith('!pausechat')) {
+    if (messageContent.startsWith('!pausechat')) {
         message.reply(SWG.paused ? "unpausing" : "pausing");
         console.log("Received pausechat request from " + sender);
         SWG.paused = !SWG.paused;
