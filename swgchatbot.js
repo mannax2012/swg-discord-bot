@@ -1,8 +1,8 @@
 const Discord = require('discord.js');
-const { Client, Events, GatewayIntentBits, Partials, ActivityType } = require('discord.js');
+const { Client, Events, GatewayIntentBits, Partials, ActivityType, ChannelType } = require('discord.js');
 const SWG = require('./swgclient.js');
 const config = require('./config.json');
-const verboseLogging = config.verboseLogging;
+const verboseDiscordLogging = config.Discord.verboseDiscordLogging;
 SWG.login(config.SWG);
 
 //Make sure these are global
@@ -48,17 +48,40 @@ client.once(Events.ClientReady, c => {
 });
 
 client.on("messageCreate", async (message) => {
+
+    if (verboseDiscordLogging) {
+        console.log("message.author.username = " + message.author.username);
+        console.log("message.channel.name = " + message.channel.name);
+        console.log("message.channel.type = " + message.channel.type);
+    }
+
     if (message.author.username == config.Discord.BotName) {
         return;
     }
-    var sender;
-    if (message.channel.name == config.Discord.ChatChannel) {
-        sender = server.members.cache.get(message.author.id).displayName;
+
+    if (message.channel.type === ChannelType.DM) { // Ignore DMs
+        return;
     }
-    else {
-        sender = message.author.username;
+
+    if (message.channel.name != config.Discord.ChatChannel && message.channel.name != config.Discord.NotificationChannel) {
+        return;
     }
-    let messageContent = message.content.toLowerCase();
+
+    var sender = server.members.cache.get(message.author.id).displayName;    // Get server nickname first if available
+
+    if (verboseDiscordLogging) {
+        console.log("sender = " + sender);
+        console.log("message.author.username = " + message.author.username);
+        console.log("message.author.global_name = " + message.author.global_name);
+        console.log("message.content = " + message.content);
+    }
+
+    if (sender == message.author.username) {
+        if (message.author.global_name)
+        sender = message.author.global_name;
+    }
+
+    var messageContent = message.content.toLowerCase();
     if (messageContent.startsWith('!server')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
@@ -73,9 +96,10 @@ client.on("messageCreate", async (message) => {
         SWG.paused = !SWG.paused;
     }
 
-    if (message.channel.name != config.Discord.ChatChannel) {
+    if (message.channel.name != config.Discord.ChatChannel) { // Only send specific chat channel text to SWG
         return;
     }
+
     SWG.sendChat(message.cleanContent, sender);
 });
 
@@ -83,7 +107,6 @@ client.on('disconnect', event => {
     try {notif.send(config.Discord.BotName + " disconnected");}catch(ex){}
     client = server = notif = chat = notifRole = null;
     console.log("Discord disconnect: " + JSON.stringify(event,null,2));
-    //setTimeout(() => { process.exit(0); }, 500);
     process.exit(0);
     //setTimeout(discordBot, 1000);  Not going to automatically connect due to PM2 so will will just exit when bot disconnects
 });
@@ -109,7 +132,7 @@ SWG.serverUp = function() {
 }
 
 SWG.recvChat = function(message, player) {
-    if (verboseLogging) {
+    if (verboseDiscordLogging) {
         console.log("sending chat to Discord " + player + ": " + message);
     }
     if (chat) {

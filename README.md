@@ -32,7 +32,8 @@ For instance:
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
-        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName"
+        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName",
+        "verboseSWGLogging": false
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
@@ -44,9 +45,9 @@ For instance:
         "NotificationMentionRole": "staff",
 	    "NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
         "AutoRestartTimer": 60,
-        "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature."
-    },
-    "verboseLogging": false
+        "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature.",
+        "verboseDiscordLogging": false
+    }
 }
 
 ```
@@ -61,6 +62,7 @@ For instance:
 | SWG.Password | The Password you type in the SWG splash screen. |
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
 | SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
+| verboseSWGLogging| Enable or disable verbose console logging for SWG functions |
 | Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
 | Discord.PresenceName | The bot will show "Playing PresenceName" |
 | Discord.BotToken | The App Bot User Token from the discordapp Bot page |
@@ -70,7 +72,7 @@ For instance:
 | Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications |
 | Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user |
 | Discord.AutoRestartTimer| Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature. |
-| verboseLogging| Enable or disable verbose console logging |
+| verboseDiscordLogging| Enable or disable verbose console logging for Discord functions |
 
 Finally run the bot with:
 

@@ -1,7 +1,7 @@
 const zlib = require('zlib');
 const crypto = require('crypto');
 const config = require('./config');
-const verboseLogging = config.verboseLogging;
+const verboseSWGLogging = config.SWG.verboseSWGLogging;
 const session = {lastAck: -1, lastSequence: -1};
 
 var fragments = null, fragmentLength;
@@ -10,8 +10,8 @@ var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
     var SOEHeader = buf.readUInt16BE(0);
     if (SOEHeader > 0x2 && !decrypted) buf = Decrypt(buf);
     var len, opcode;
-    if (verboseLogging) console.log(buf.toString('hex'));
-    if (verboseLogging) console.log(buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
+    if (verboseSWGLogging) console.log(buf.toString('hex'));
+    if (verboseSWGLogging) console.log(buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
     if (SOEHeader == 0x1) {
         return [{type: "SessionRequest",
             CRCLength: buf.readUInt32BE(2),
@@ -79,7 +79,7 @@ var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
             fragments = buf.slice(8,-3);
         } else {
             fragments = Buffer.concat([fragments, buf.slice(4, -3)]);
-            if (verboseLogging) console.log("fragment", fragments.length , "/", fragmentLength);
+            if (verboseSWGLogging) console.log("fragment", fragments.length , "/", fragmentLength);
             if (fragments.length == fragmentLength) {
                 buf = fragments;
                 fragments = null;
@@ -91,7 +91,7 @@ var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
                 var ret = [DecodeSWGPacket[opcode](buf.slice(6))];
                 return ret;
             } else if (fragments.length > fragmentLength) {
-                if (verboseLogging) console.log("extra data fragment", fragments.length , "/", fragmentLength);
+                if (verboseSWGLogging) console.log("extra data fragment", fragments.length , "/", fragmentLength);
                 fragments = null;
             }
         }
@@ -155,7 +155,7 @@ function Encrypt(bufData) {
         bufData = Buffer.concat([bufData.slice(0,2), zlib.deflateSync(bufData.slice(2)), Buffer.from([1,0,0])]);
     else
         bufData = Buffer.concat([bufData, Buffer.from([0,0,0])]);
-    if (verboseLogging) console.log(bufData.toString('hex'));
+    if (verboseSWGLogging) console.log(bufData.toString('hex'));
     var encrypted = Buffer.alloc(bufData.length);
     encrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 

@@ -1,7 +1,7 @@
 const SOEProtocol = require("./SOEProtocol");
 const dgram = require('dgram');
 const config = require('./config');
-const verboseLogging = config.verboseLogging;
+const verboseSWGLogging = config.SWG.verboseSWGLogging;
 
 var server = {};
 module.exports.login = function(cfg) {
@@ -12,7 +12,7 @@ module.exports.isConnected = false;
 module.exports.paused = false;
 module.exports.sendChat = function(message, user) {
     if (!module.exports.isConnected) return;
-    if (verboseLogging) console.log("sending chat to game: " + user + ": " + message);
+    if (verboseSWGLogging) console.log("sending chat to game: " + user + ": " + message);
     send("ChatSendToRoom", {Message: ' \\#ff3333' + user + ': \\#ff66ff' + message, RoomID: server.ChatRoomID});
 }
 module.exports.recvChat = function(message, player) {}
@@ -42,7 +42,7 @@ function handleMessage(msg, info) {
     if (!packets) return;
     for (var packet of packets) {
         //if (!packet.type.startsWith("1b24f808"))
-            if (verboseLogging) console.log("recv: " + packet.type);
+            if (verboseSWGLogging) console.log("recv: " + packet.type);
         if (handlePacket[packet.type])
             handlePacket[packet.type](packet);
         //else console.log("No handler for " + packet.type);
@@ -68,7 +68,7 @@ handlePacket["LoginEnumCluster"] = function(packet) {
     server.ServerNames = packet.Servers;
 }
 handlePacket["LoginClusterStatus"] = function(packet) {
-    if (verboseLogging) console.log(packet);
+    if (verboseSWGLogging) console.log(packet);
     server.Servers = packet.Servers;
 }
 handlePacket["EnumerateCharacterId"] = function(packet) {
@@ -93,7 +93,7 @@ handlePacket["ClientPermissions"] = function(packet) {
     }, 1000);
 }
 handlePacket["ChatRoomList"] = function(packet) {
-    if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
+    if (verboseSWGLogging) console.log(JSON.stringify(packet, null, 2));
     for (var roomID in packet.Rooms) {
         var room = packet.Rooms[roomID];
         if (room.RoomPath.endsWith(server.ChatRoom)) {
@@ -103,11 +103,11 @@ handlePacket["ChatRoomList"] = function(packet) {
     }
 }
 handlePacket["ChatOnEnteredRoom"] = function(packet) {
-    if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
+    if (verboseSWGLogging) console.log(JSON.stringify(packet, null, 2));
     if (packet.RoomID == server.ChatRoomID && packet.PlayerName == server.Character) {
         if (!module.exports.isConnected) {
             module.exports.isConnected = true;
-            if (verboseLogging) console.log("connected");
+            if (verboseSWGLogging) console.log("connected");
             module.exports.reconnected();
         }
         if (fails >= 3) module.exports.serverUp();
@@ -115,7 +115,7 @@ handlePacket["ChatOnEnteredRoom"] = function(packet) {
     }
 }
 handlePacket["ChatRoomMessage"] = function(packet) {
-    if (verboseLogging) console.log(JSON.stringify(packet, null, 2));
+    if (verboseSWGLogging) console.log(JSON.stringify(packet, null, 2));
     if (packet.RoomID == server.ChatRoomID && packet.CharacterName != server.Character.toLowerCase())
         module.exports.recvChat(packet.Message, packet.CharacterName);
 }
@@ -140,7 +140,7 @@ function Login() {
 function send(type, data) {
     var buf = SOEProtocol.Encode(type, data);
     if (buf) {
-        if (verboseLogging) console.log("send: " + type);
+        if (verboseSWGLogging) console.log("send: " + type);
         if (Array.isArray(buf)) {
             for (var b of buf) {
                 socket.send(b, server.Port, server.Address);

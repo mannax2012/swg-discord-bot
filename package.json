@@ -1,6 +1,6 @@
 {
   "name": "swg-discord-bot",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "author": "Initial by Progor, updated by SWG Infinity Developers",
   "description": "Transfer chat messages from Discord to SWG and back",
   "main": "swgchatbot.js",

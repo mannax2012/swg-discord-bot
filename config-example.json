@@ -3,11 +3,12 @@
         "LoginAddress": "SWGserveraddress",
 	"SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-	"PingPort" : 7,
+	    "PingPort" : 7,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
-        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName"
+        "ChatRoom": "SWG.SWG Server Name.GeneralChatRoomName",
+        "verboseSWGLogging": false
     },
     "Discord": {
         "BotName": "SWG Chat Bot",
@@ -20,7 +21,7 @@
 		"NotificationMentionUserID": "If role is blank, can put a Discord user ID here",
         "AutoRestartTimer": 60,
         "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.",
+        "verboseDiscordLogging": false
     },
-    "verboseLogging": false
 }
 
