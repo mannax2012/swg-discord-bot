@@ -67,7 +67,7 @@ client.on("messageCreate", async (message) => {
         return;
     }
 
-    var sender = server.members.cache.get(message.author.id).displayName;    // Get server nickname first if available
+    var sender = server.members.cache.get(message.author.id).displayName;    // Get server displayName, if not available will use global displayName
 
     if (verboseDiscordLogging) {
         console.log("sender = " + sender);
@@ -75,13 +75,6 @@ client.on("messageCreate", async (message) => {
         //console.log("message.author.global_name = " + message.author.global_name);
         console.log("message.content = " + message.content);
     }
-
-    /*
-    if (sender == message.author.username) {
-        if (message.author.global_name)
-            sender = message.author.global_name;
-    }
-    */
 
     var messageContent = message.content.toLowerCase();
     if (messageContent.startsWith('!server')) {
