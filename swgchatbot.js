@@ -72,14 +72,16 @@ client.on("messageCreate", async (message) => {
     if (verboseDiscordLogging) {
         console.log("sender = " + sender);
         console.log("message.author.username = " + message.author.username);
-        console.log("message.author.global_name = " + message.author.global_name);
+        //console.log("message.author.global_name = " + message.author.global_name);
         console.log("message.content = " + message.content);
     }
 
+    /*
     if (sender == message.author.username) {
         if (message.author.global_name)
-        sender = message.author.global_name;
+            sender = message.author.global_name;
     }
+    */
 
     var messageContent = message.content.toLowerCase();
     if (messageContent.startsWith('!server')) {

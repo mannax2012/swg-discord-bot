@@ -9,7 +9,7 @@
   },
   "license": "CC0-1.0",
   "dependencies": {
-    "discord.js": "^14.11.0",
+    "discord.js": "^14.12.1",
     "uws": "^200.0.0"
   }
 }
