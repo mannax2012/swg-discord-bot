@@ -1,5 +1,5 @@
 const Discord = require('discord.js');
-const { Client, Events, GatewayIntentBits, Partials, ActivityType } = require('discord.js');
+const { Client, Events, GatewayIntentBits, Partials, ActivityType, ChannelType } = require('discord.js');
 const SWG = require('./swgclient.js');
 const config = require('./config.json');
 const verboseLogging = config.verboseLogging;
@@ -48,34 +48,36 @@ client.on('ready', () => {
 });
 
 client.on("messageCreate", async (message) => {
-    if (message.author.id == config.Discord.BotID) {
+    if (message.author.id == config.Discord.BotID) { //Ignore messages from self
         return;
     }
-    var sender;
-    if (message.channel.id == config.Discord.ChatChannelID) {
-        sender = server.members.cache.get(message.author.id).displayName;
+	
+	if (message.channel.type === ChannelType.DM) { //Ignore DMs
+        return;
     }
-    else {
-        sender = message.author.username;
+	
+	if (message.channel.id != config.Discord.ChatChannelID) { //Ignore all channels apart from the specified chat channel
+        return;
     }
-    if (message.content.startsWith('!server')) {
+	
+    var sender = server.members.cache.get(message.author.id).displayName;
+	
+	let lowerCaseMessageContent = message.content.toLowerCase();
+    if (lowerCaseMessageContent.startsWith('!server')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
-    if (message.content.startsWith('!fixchat')) {
+    if (lowerCaseMessageContent.startsWith('!fixchat')) {
         message.reply("rebooting chat bot");
         console.log("Received !fixchat request from " + sender);
         process.exit(0);
-        //setTimeout(() => { process.exit(0); }, 500);
+        setTimeout(() => { process.exit(0); }, 500); //Exit in 500 ms, allow time for reply to be sent
     }
-    if (message.content.startsWith('!pausechat')) {
+    if (lowerCaseMessageContent.startsWith('!pausechat')) {
         message.reply(SWG.paused ? "unpausing" : "pausing");
         console.log("Received pausechat request from " + sender);
         SWG.paused = !SWG.paused;
     }
 
-    if (message.channel.id != config.Discord.ChatChannelID) {
-        return;
-    }
     SWG.sendChat(message.cleanContent, sender);
 });
 
