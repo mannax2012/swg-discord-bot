@@ -6,7 +6,7 @@ Since it's constantly in communication with the game server, it knows quickly wh
 
 ## Getting Started
 
-First, create a Discord bot.  Go to https://discordapp.com/developers, fill out the name of your bot/app, make it public, give it a profile photo if you want, and save it.  You don't need OAuth2 or Redirect URIs.  This will give you the name and token you need later.   On the application Bot tab within the Discord Developers Portal, make sure "SERVER MEMBERS INTENT" is enabled.
+First, create a Discord bot.  Go to https://discordapp.com/developers, fill out the name of your bot/app, make it public, give it a profile photo if you want, and save it.  You don't need OAuth2 or Redirect URIs.  This will give you the name and token you need later.   On the application Bot tab within the Discord Developers Portal, make sure "SERVER MEMBERS INTENT" and "MESSAGE CONTENT INTENT' options are enabled.
 
 Then, invite the bot to your server.  Use this link: https://discordapp.com/oauth2/authorize?client_id=CLIENT_ID&scope=bot but replace the Client_ID with the Client ID from the bot you just created.
 
