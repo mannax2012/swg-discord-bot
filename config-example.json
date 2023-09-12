@@ -22,6 +22,6 @@
         "AutoRestartTimer": 60,
         "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.",
         "verboseDiscordLogging": false
-    },
+    }
 }
 
