@@ -5,7 +5,7 @@ const verboseSWGLogging = config.SWG.verboseSWGLogging;
 const session = {lastAck: -1, lastSequence: -1};
 
 var fragments = null, fragmentLength;
-var DecodeSOEPacket = module.exports.Decode = function (buf, decrypted) {
+var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     if (!Buffer.isBuffer(buf)) buf = Buffer.from(buf, "hex");
     var SOEHeader = buf.readUInt16BE(0);
     if (SOEHeader > 0x2 && !decrypted) buf = Decrypt(buf);
@@ -188,7 +188,7 @@ function EncodeSOEHeader(opcode, operands) {
 
 DecodeSWGPacket = {};
 EncodeSWGPacket = {};
-EncodeSWGPacket["Ack"] = function(data) {
+EncodeSWGPacket["Ack"] = function() {
     if (session.lastAck >= session.lastSequence) return false;
     var buf = Buffer.alloc(4);
     buf.writeUInt16BE(0x15, 0);
@@ -197,10 +197,11 @@ EncodeSWGPacket["Ack"] = function(data) {
     return Encrypt(buf);
 }
 
-EncodeSWGPacket["NetStatusRequest"] = function(data) {
-    var buf = Buffer.alloc(4);
-    buf.writeUInt16BE(0x7, 0);
-    buf.writeUInt16BE(0, 2);
+EncodeSWGPacket["NetStatusRequest"] = function() {
+    var buf = Buffer.alloc(40);                 //Need to send the complete 40 byte packet
+    buf.writeUInt16BE(0x07, 0);                 //00 07 - Client Network Status Update
+    var tick  = new Date().getTime() & 0xFFFF;  //Convert to uint16
+    buf.writeUInt16LE(tick, 2);                 //Convert to little endian (same as htons in c++)
     return Encrypt(buf);
 }
 
@@ -223,7 +224,7 @@ DecodeSWGPacket[0xd5899226] = function(data) {
     session.SessionKey = ret.SessionKey
     return ret;
 }
-EncodeSWGPacket["ClientIdMsg"] = function(data) {
+EncodeSWGPacket["ClientIdMsg"] = function() {
     var header = EncodeSOEHeader(0xd5899226, 3);
     var buf = Buffer.alloc(496);
     buf.fill(0,0,4);
@@ -237,13 +238,13 @@ EncodeSWGPacket["ClientIdMsg"] = function(data) {
     return Encrypt(buf);
 }
 
-DecodeSWGPacket[0x31805ee0] = function(data) {
+DecodeSWGPacket[0x31805ee0] = function() {
     return {type: "LagRequest"};
 }
-DecodeSWGPacket[0x1590f63c] = function(data) {
+DecodeSWGPacket[0x1590f63c] = function() {
     return {type: "ConectionServerLagResponse"};
 }
-DecodeSWGPacket[0x789a4e0a] = function(data) {
+DecodeSWGPacket[0x789a4e0a] = function() {
     return {type: "GameServerLagResponse"};
 }
 DecodeSWGPacket[0xe00730e5] = function(data) {
@@ -461,10 +462,10 @@ DecodeSWGPacket[0xe7b61633] = function(data) {
     }
 }
 
-DecodeSWGPacket[0x43fd1c22] = function(data) {
+DecodeSWGPacket[0x43fd1c22] = function() {
     return {type: "CmdSceneReady"};
 }
-EncodeSWGPacket["CmdSceneReady"] = function(data) {
+EncodeSWGPacket["CmdSceneReady"] = function() {
     return Encrypt(EncodeSOEHeader(0x43fd1c22, 1));
 }
 
@@ -496,7 +497,7 @@ DecodeSWGPacket[0xe69bdc0a] = function(data) {
 }
 
 DecodeSWGPacket[0x9cf2b192] = function(data) {
-    data.off=4;
+    data.off = 4;
     return {type: "ChatQueryRoom",
         RequestID: data.readUInt32LE(0),
         RoomPath: AString(data)
@@ -605,7 +606,7 @@ DecodeSWGPacket[0x70deb197] = function(data) {
     return ret;
 }
 
-DecodeSWGPacket[0x80ce5e46] = function(data) {
+DecodeSWGPacket[0x80ce5e46] = function() {
     return {type:"ObjectController", TODO: "Main event for interacting with world"}
 }
 
@@ -622,15 +623,15 @@ DecodeSWGPacket[0x0f5d5325] = function(data) {
     return {type:"ClientInactivity", Flag: data.readUInt8(0)}
 }
 
-DecodeSWGPacket[0x4c3d2cfa] = function(data) {
+DecodeSWGPacket[0x4c3d2cfa] = function() {
     return {type:"ChatRequestRoomList"}
 }
 
-EncodeSWGPacket["ChatRequestRoomList"] = function(data) {
+EncodeSWGPacket["ChatRequestRoomList"] = function() {
     return Encrypt(EncodeSOEHeader(0x4c3d2cfa, 1));
 }
 
-DecodeSWGPacket[0x2e365218] = function(data) {
+DecodeSWGPacket[0x2e365218] = function() {
     return {type:"ConnectPlayer"}
 }
 
@@ -664,7 +665,7 @@ DecodeSWGPacket[0x60b5098b] = function(data) {
     return {type:"ChatOnLeaveRoom", PlayerName: AString(data), RoomID: data.readUInt32LE(data.off+4)}
 }
 
-DecodeSWGPacket[0x6137556f] = function(data) {
+DecodeSWGPacket[0x6137556f] = function() {
     return {type:"ConnectPlayerResponse"};
 }
 

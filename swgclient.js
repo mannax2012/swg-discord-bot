@@ -174,4 +174,4 @@ setInterval(() => {
 setInterval(() => {
     if (!module.exports.isConnected) return;
 	send("NetStatusRequest");
-}, 40000);
+}, 30000);
