@@ -43,8 +43,8 @@ client.once(Events.ClientReady, c => {
         }, autoRestartTimer * 60 * 1000);
     }
 
-    // Send a ping to SWG client every 30 seconds
-    setInterval(() => SWG.sendTell(config.SWG.Character, "ping"), 30 * 1000);
+    // Send a tell to SWG client every 30 seconds.   Doesn't seem to be needed anymore
+    //setInterval(() => SWG.sendTell(config.SWG.Character, "ping"), 30 * 1000);
 });
 
 client.on("messageCreate", async (message) => {
