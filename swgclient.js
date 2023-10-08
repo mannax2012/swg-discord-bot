@@ -122,6 +122,9 @@ handlePacket["ChatRoomMessage"] = function(packet) {
 handlePacket["ChatInstantMessageToClient"] = function(packet) {
     module.exports.recvTell(packet.PlayerName, packet.Message);
 }
+handlePacket["ServerNetStatusRequest"] = function(packet) {
+	send("ServerNetStatusResponse");
+}
 
 function Login() {
     loggedIn = false;
@@ -165,13 +168,16 @@ setInterval(() => {
 }, 100);
 
 setInterval(() => {
-    if (!server.PingPort || !module.exports.isConnected) return;
-    var buf = Buffer.alloc(4)
-    buf.writeUInt32LE((new Date().getTime() & 0xFFFFFFFF) >>> 0);
-    socket.send(buf, server.PingPort, server.Address);
-}, 1000);
+    if (!server.PingPort || !module.exports.isConnected)
+        return;
+    var buf = Buffer.alloc(4);                          //Server requires 4 byte packet, with 00 06 as the header
+    buf.writeUInt16BE(0x06, 0);                         //00 06 Is Ping Opcode
+    var tick = new Date().getTime() & 0xFFFF;           //Convert to uint16
+    buf.writeUInt16LE(tick, 2);                         //Convert to little endian (same as htons in c++)
+    socket.send(buf, server.PingPort, server.Address);  //Send to the ping server IP and port
+}, 24 * 1000);                                          //Let's send a ping every 24 seconds, as it looks like the timeout is 50 and that allows for missing one
 
 setInterval(() => {
     if (!module.exports.isConnected) return;
-	send("NetStatusRequest");
-}, 30000);
+	send("ClientNetStatusRequest");
+}, 24 * 1000);                                          //Going to send a net status packet every 24 seconds 

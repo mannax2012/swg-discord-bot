@@ -100,6 +100,9 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     else if (SOEHeader == 0x15) {
         return [{type: "Ack", sequence: buf.readUInt16BE(2)}];
     }
+    else if (SOEHeader == 0x08) {
+        return [{type: "ServerNetStatusRequest"}];
+    }
 }
 
 module.exports.Encode = function(type, data) {
@@ -197,9 +200,19 @@ EncodeSWGPacket["Ack"] = function() {
     return Encrypt(buf);
 }
 
-EncodeSWGPacket["NetStatusRequest"] = function() {
+EncodeSWGPacket["ClientNetStatusRequest"] = function() {
     var buf = Buffer.alloc(40);                 //Need to send the complete 40 byte packet
     buf.writeUInt16BE(0x07, 0);                 //00 07 - Client Network Status Update
+    var tick  = new Date().getTime() & 0xFFFF;  //Convert to uint16
+    buf.writeUInt16LE(tick, 2);                 //Convert to little endian (same as htons in c++)
+    buf.writeUInt8(0x2, 31);                    //Packets Sent
+    buf.writeUint8(0x1, 39);                    //Packets Received
+    return Encrypt(buf);
+}
+
+EncodeSWGPacket["ServerNetStatusResponse"] = function() {
+    var buf = Buffer.alloc(32);                 //Need to send the complete 40 byte packet
+    buf.writeUInt16BE(0x08, 0);                 //00 08 - Response to server netstatus request 
     var tick  = new Date().getTime() & 0xFFFF;  //Convert to uint16
     buf.writeUInt16LE(tick, 2);                 //Convert to little endian (same as htons in c++)
     return Encrypt(buf);
