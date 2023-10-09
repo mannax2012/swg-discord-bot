@@ -414,8 +414,7 @@ DecodeSWGPacket[0x20e4dbe3] = function(data) {
 }
 messageCounter = 1;
 EncodeSWGPacket["ChatSendToRoom"] = function(data) {
-    var maxLength = (5000 - 10 - 16) / 2.0;
-    var chatMessage = truncate(data.Message, maxLength);    //Going to truncate to stay under the max buffer size of 5000
+    var chatMessage = truncate(data.Message, 2000);    //Going to truncate messages at 2000 characters to stay under the max buffer size of 5000
     var buf = Buffer.concat([EncodeSOEHeader(0x20e4dbe3, 5), Buffer.alloc(chatMessage.length * 2 + 16)]);
     buf.off = 10;
     writeUString(buf, chatMessage);
@@ -428,8 +427,7 @@ EncodeSWGPacket["ChatSendToRoom"] = function(data) {
 
 tellCounter = 1;
 EncodeSWGPacket["ChatInstantMessageToCharacter"] = function(data) {
-    var maxLength = (5000 - 10 - 16 - data.ServerName.length - data.PlayerName.length - 16) / 2.0;
-    var chatMessage = truncate(data.Message, maxLength);    //Going to truncate to stay under the max buffer size of 5000
+    var chatMessage = truncate(data.Message, 2000);    //Going to truncate messages at 2000 characters to stay under the max buffer size of 5000
     var buf = Buffer.concat([EncodeSOEHeader(0x84bb21f7, 5), Buffer.alloc(21 + data.ServerName.length + data.PlayerName.length + chatMessage.length * 2)]);
     buf.off = 10;
     writeAString(buf, "SWG");
