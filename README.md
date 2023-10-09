@@ -26,9 +26,9 @@ For instance:
 {
     "SWG": {
         "LoginAddress": "SWGserveraddress",
-	"SWGServerName": "SWG Server Name",
+        "SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-	"PingPort" : 7,
+        "PingPort" : 44462,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
@@ -43,7 +43,7 @@ For instance:
         "ChatChannel": "chatchannel",
         "NotificationChannel": "staffchannel",
         "NotificationMentionRole": "staff",
-	    "NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
+        "NotificationMentionUserID": "If role is left blank, you can put a Discord user ID here to notify a single user",
         "AutoRestartTimer": 60,
         "//AutoRestartTimerComment":  "Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature.",
         "verboseDiscordLogging": false
