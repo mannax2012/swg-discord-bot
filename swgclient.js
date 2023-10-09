@@ -175,9 +175,9 @@ setInterval(() => {
     var tick = new Date().getTime() & 0xFFFF;           //Convert to uint16
     buf.writeUInt16LE(tick, 2);                         //Convert to little endian (same as htons in c++)
     socket.send(buf, server.PingPort, server.Address);  //Send to the ping server IP and port
-}, 24 * 1000);                                          //Let's send a ping every 24 seconds, as it looks like the timeout is 50 and that allows for missing one
+}, 20 * 1000);                                          //Let's send a ping every 20 seconds, this will allow us to miss one and not timeout
 
 setInterval(() => {
     if (!module.exports.isConnected) return;
 	send("ClientNetStatusRequest");
-}, 24 * 1000);                                          //Going to send a net status packet every 24 seconds 
+}, 20 * 1000);                                          //Going to send a net status packet every 20 seconds 
