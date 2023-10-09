@@ -285,8 +285,6 @@ EncodeSWGPacket["SelectCharacter"] = function(data) {
     buf = Buffer.concat([header, buf]);
     return Encrypt(buf);
 }
-
-
 DecodeSWGPacket[0x41131f96] = function(data) {
     data.off = 0;
     return {type: "LoginClientID",
@@ -416,9 +414,11 @@ DecodeSWGPacket[0x20e4dbe3] = function(data) {
 }
 messageCounter = 1;
 EncodeSWGPacket["ChatSendToRoom"] = function(data) {
-    var buf = Buffer.concat([EncodeSOEHeader(0x20e4dbe3, 5), Buffer.alloc(data.Message.length * 2 + 16)]);
+    var maxLength = (5000 - 10 - 16) / 2.0;
+    var chatMessage = truncate(data.Message, maxLength);    //Going to truncate to stay under the max buffer size of 5000
+    var buf = Buffer.concat([EncodeSOEHeader(0x20e4dbe3, 5), Buffer.alloc(chatMessage.length * 2 + 16)]);
     buf.off = 10;
-    writeUString(buf, data.Message);
+    writeUString(buf, chatMessage);
     buf.fill(0, buf.off, buf.off+4);
     buf.writeUInt32LE(data.RoomID, buf.off+4);
     buf.writeUInt32LE(messageCounter++, buf.off+8);
@@ -428,12 +428,14 @@ EncodeSWGPacket["ChatSendToRoom"] = function(data) {
 
 tellCounter = 1;
 EncodeSWGPacket["ChatInstantMessageToCharacter"] = function(data) {
-    var buf = Buffer.concat([EncodeSOEHeader(0x84bb21f7, 5), Buffer.alloc(21 + data.ServerName.length + data.PlayerName.length + data.Message.length * 2)]);
+    var maxLength = (5000 - 10 - 16 - data.ServerName.length - data.PlayerName.length - 16) / 2.0;
+    var chatMessage = truncate(data.Message, maxLength);    //Going to truncate to stay under the max buffer size of 5000
+    var buf = Buffer.concat([EncodeSOEHeader(0x84bb21f7, 5), Buffer.alloc(21 + data.ServerName.length + data.PlayerName.length + chatMessage.length * 2)]);
     buf.off = 10;
     writeAString(buf, "SWG");
     writeAString(buf, data.ServerName);
     writeAString(buf, data.PlayerName);
-    writeUString(buf, data.Message);
+    writeUString(buf, chatMessage);
     buf.fill(0, buf.off, buf.off+4);
     buf.writeUInt32LE(tellCounter++, buf.off+4);
     //console.log(buf.toString('hex'));
@@ -811,3 +813,14 @@ function GenerateCrc(pData, nCrcSeed)
     }
     return ~nCrc;
 }
+
+//Custom function to trim Discord messages that are too long
+function truncate(string, length) {
+
+    if (string.length <= length) {
+        return string;
+    }
+    else {
+        return string.slice(0, length - 3) + "...";
+    }
+ }
