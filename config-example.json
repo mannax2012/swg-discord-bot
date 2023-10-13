@@ -3,7 +3,6 @@
         "LoginAddress": "SWGserveraddress",
         "SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-        "PingPort" : 44462,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",

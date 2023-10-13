@@ -28,7 +28,6 @@ For instance:
         "LoginAddress": "SWGserveraddress",
         "SWGServerName": "SWG Server Name",
         "LoginPort": 44453,
-        "PingPort" : 44462,
         "Username": "SWG Account Name",
         "Password": "SWG Account Password",
         "Character": "SWG Bot Character",
@@ -54,25 +53,24 @@ For instance:
 
 | Field | Explanation |
 | ------ | ------ |
-| SWG.LoginAddress | The Address of the SWGEmu login server.  This is what you point your launcher at. |
-| SWG.SWGServerName| Uses for messages in the app |
-| SWG.LoginPort | The Port of the SWGEmu login server.  This is usually 44453 |
-"PingPort" : 7,  Ping port for SWG server |
+| SWG.LoginAddress | The Address of the SWGEmu login server.  This is the server IP address that your launcher uses. |
+| SWG.SWGServerName| Uses for messages in the app. |
+| SWG.LoginPort | The Port of the SWGEmu login server.  This is usually 44453. |
 | SWG.Username | The Username you type in the SWG splash screen. |
 | SWG.Password | The Password you type in the SWG splash screen. |
 | SWG.Character | The Character you choose on the character select screen.  First name only.  Case matters. |
-| SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main |
-| verboseSWGLogging| Enable or disable verbose console logging for SWG functions |
-| Discord.BotName | The App Name of the Bot you created in discordapp.com/developers |
-| Discord.PresenceName | The bot will show "Playing PresenceName" |
-| Discord.BotToken | The App Bot User Token from the discordapp Bot page |
-| Discord.ServerID | The server ID of the Discord server the Bot is monitoring |
-| Discord.ChatChannel | The name of the Discord channel the Bot should replicate to/from |
-| Discord.NotificationChannel | The name of the Discord channel that server up/down events should be posted to |
-| Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications |
-| Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user |
+| SWG.ChatRoom | The name of the ChatRoom it should replicate to/from.  If nested in the tree, use dots, i.e. Chat.General.Main. |
+| verboseSWGLogging| Enable or disable verbose console logging for SWG functions. |
+| Discord.BotName | The App Name of the Bot you created in discordapp.com/developers. |
+| Discord.PresenceName | The bot will show "Playing PresenceName". |
+| Discord.BotToken | The App Bot User Token from the discordapp Bot page. |
+| Discord.ServerID | The server ID of the Discord server the Bot is monitoring. |
+| Discord.ChatChannel | The name of the Discord channel the Bot should replicate to/from. |
+| Discord.NotificationChannel | The name of the Discord channel to which server up/down events should be posted. |
+| Discord.NotificationMentionRole | The name of the role that should be mentioned in up/down notifications. |
+| Discord.NotificationMentionUserID| If role is left blank, you can put a Discord user ID here to notify a single user. |
 | Discord.AutoRestartTimer| Auto restart timer in minutes.  If omitted, there will be no auto-restart.  You will need forever or pm2 to use this feature. |
-| verboseDiscordLogging| Enable or disable verbose console logging for Discord functions |
+| verboseDiscordLogging| Enable or disable verbose console logging for Discord functions. |
 
 Finally run the bot with:
 
