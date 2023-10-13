@@ -151,7 +151,7 @@ function Decrypt(bufData) {
 
     decrypted.writeUInt16BE(bufData.readUInt16BE(offset), offset);
 
-      try {
+    try {
         var decompressedData = zlib.inflateSync(decrypted.subarray(2, -3));
         return Buffer.concat([decrypted.subarray(0,2), decompressedData, decrypted.subarray(-3)]);
     }
