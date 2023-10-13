@@ -10,18 +10,25 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     var SOEHeader = buf.readUInt16BE(0);
     if (SOEHeader > 0x2 && !decrypted) buf = Decrypt(buf);
     var len, opcode;
-    if (verboseSWGLogging) console.log(buf.toString('hex'));
-    if (verboseSWGLogging) console.log(buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
-    if (SOEHeader == 0x1) {
+
+    if (verboseSWGLogging) {
+        console.log(getFullTimestamp() + " - Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toUpperCase().padStart(4, 0)  + " from server.");  
+        console.log("Hex: " + buf.toString('hex'));
+        console.log("ASCII: " + buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
+    }
+
+    if (SOEHeader == 0x0001) { //This should never happen.  Will log in case it does.
+        console.log(getFullTimestamp() + " - Received SessionRequest packet from the server.  This is strange.");  
         return [{type: "SessionRequest",
             CRCLength: buf.readUInt32BE(2),
             ConnectionID: buf.readUInt32BE(6).toString(16),
             ClientUDPSize: buf.readUInt32BE(10)
         }];
     }
-    else if (SOEHeader == 0x2) {
+    else if (SOEHeader == 0x0002) {
         session.type = "SessionResponse";
         session.connectionID = buf.readUInt32BE(2);
+        //console.log(getFullTimestamp() + " - Received SessionResponse packet from the server.  Connection ID = " + session.connectionID.toString(16).toUpperCase().padStart(8, 0) + ".");
         session.CRCSeed = buf.readUInt32BE(6);
         session.CRCLength = buf.readUInt8(10);
         session.UseCompression = buf.readUInt8(11);
@@ -33,17 +40,27 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
         session.RequestID = 0;
         return [session];
     }
-    else if (SOEHeader == 0x3) {
+    else if (SOEHeader == 0x0003) {
         var ret = [];
         var offset = 2;
         while (offset < buf.length - 3) {
             len = buf.readUInt8(offset);
-            ret.push(DecodeSOEPacket(buf.slice(offset + 1, offset + len + 1), true));
+            ret.push(DecodeSOEPacket(buf.subarray(offset + 1, offset + len + 1), true));
+            //ret.push(DecodeSOEPacket(buf.slice(offset + 1, offset + len + 1), true));
             offset += len + 1;
         }
         return ret;
     }
-    else if (SOEHeader == 0x9) {
+    else if (SOEHeader == 0x0005) {
+        var connectionID = buf.readUInt32BE(2);
+        var reasonID = buf.readUInt8(6);
+        console.log(getFullTimestamp() + " - Received Disconnect packet from server.  Connection ID = " + connectionID + ".  Reason code = " + reasonID + ".");
+        //return [{type: "Disconnect"}];
+    }
+    else if (SOEHeader == 0x0008) { 
+        //return [{type: "ServerNetStatusUpdate"}];
+    }
+    else if (SOEHeader == 0x0009) {
         var sequence = buf.readUInt16BE(2);
         if (sequence <= session.lastSequence && !module.exports.analyze) return [];
         session.lastSequence = sequence;
@@ -60,7 +77,7 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
                 if (!DecodeSWGPacket[opcode]) 
                     ret.push({type: opcode.toString(16) + " " + len});
                 else
-                    ret.push(DecodeSWGPacket[opcode](buf.slice(offset + 6, offset + len)));
+                    ret.push(DecodeSWGPacket[opcode](buf.subarray(offset + 6, offset + len)));
                 offset += len;
             }
             return ret;
@@ -68,27 +85,25 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
         opcode = buf.readUInt32LE(6);
         len = buf.length - 7;
         if (!DecodeSWGPacket[opcode]) return [{type: opcode.toString(16) + " " + len}];
-        return [DecodeSWGPacket[opcode](buf.slice(10, decrypted ? buf.length : -3))];
+        return [DecodeSWGPacket[opcode](buf.subarray(10, decrypted ? buf.length : -3))];
     }
-    else if (SOEHeader == 0xd) {
+    else if (SOEHeader == 0x000d) {
         var sequence = buf.readUInt16BE(2);
         if (sequence <= session.lastSequence) return [];
         session.lastSequence = sequence;
         if (fragments == null) {
             fragmentLength = buf.readUInt32BE(4);
-            fragments = buf.slice(8,-3);
+            fragments = buf.subarray(8,-3);
         } else {
-            fragments = Buffer.concat([fragments, buf.slice(4, -3)]);
+            fragments = Buffer.concat([fragments, buf.subarray(4, -3)]);
             if (verboseSWGLogging) console.log("fragment", fragments.length , "/", fragmentLength);
             if (fragments.length == fragmentLength) {
                 buf = fragments;
                 fragments = null;
-                //console.log(buf.toString('hex'));
-                //console.log(buf.toString('utf16le'));
                 var operands = buf.readUInt16LE(0);
                 opcode = buf.readUInt32LE(2);
                 if (!DecodeSWGPacket[opcode]) return [{type: opcode.toString(16) + " " + buf.length}];
-                var ret = [DecodeSWGPacket[opcode](buf.slice(6))];
+                var ret = [DecodeSWGPacket[opcode](buf.subarray(6))];
                 return ret;
             } else if (fragments.length > fragmentLength) {
                 if (verboseSWGLogging) console.log("extra data fragment", fragments.length , "/", fragmentLength);
@@ -97,11 +112,15 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
         }
         return [];
     }
-    else if (SOEHeader == 0x15) {
+    else if (SOEHeader == 0x0015) {
         return [{type: "Ack", sequence: buf.readUInt16BE(2)}];
     }
-    else if (SOEHeader == 0x08) {
-        return [{type: "ServerNetStatusRequest"}];
+    else {
+        if (verboseSWGLogging) {
+            console.log(getFullTimestamp() + " : Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toUpperCase().padStart(4, 0)  + " from server.");  
+            console.log("Hex: " + buf.toString('hex'));
+            console.log("ASCII: " + buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
+        }
     }
 }
 
@@ -109,8 +128,9 @@ module.exports.Encode = function(type, data) {
     return EncodeSWGPacket[type](data);
 }
 
-function Decrypt(bufData)
-{
+function Decrypt(bufData) {
+
+    //console.log("Entering Decrypt function");
     var decrypted = Buffer.alloc(bufData.length);
     decrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 
@@ -130,10 +150,14 @@ function Decrypt(bufData)
     }
 
     decrypted.writeUInt16BE(bufData.readUInt16BE(offset), offset);
-    //console.log(decrypted.toString('hex'));
-    if (decrypted.readUInt8(decrypted.length-3) == 1)
-        return Buffer.concat([decrypted.slice(0,2), zlib.inflateSync(decrypted.slice(2, -3)), decrypted.slice(-3)]);
-    return decrypted;
+
+      try {
+        var decompressedData = zlib.inflateSync(decrypted.subarray(2, -3));
+        return Buffer.concat([decrypted.subarray(0,2), decompressedData, decrypted.subarray(-3)]);
+    }
+    catch(err) {
+        return decrypted;
+    }
 }
 
 function Encrypt(bufData) {
@@ -148,14 +172,14 @@ function Encrypt(bufData) {
             head.writeUInt16BE(i > 4 ? session.sequence++ : session.sequence-1, 2);
             if (i == 4) head.writeUInt32BE(bufData.length-4, 4);
             else swgPacketSize = 496 - 4 - 3;
-            var b = Buffer.concat([head, bufData.slice(i, i+swgPacketSize)]);
+            var b = Buffer.concat([head, bufData.subarray(i, i+swgPacketSize)]);
             //console.log(b.toString('hex'));
             packets.push(Encrypt(b));
         }
         return packets;
     }
     if (bufData.length > 100 || bufData.readUInt16BE(0) == 0xd)
-        bufData = Buffer.concat([bufData.slice(0,2), zlib.deflateSync(bufData.slice(2)), Buffer.from([1,0,0])]);
+        bufData = Buffer.concat([bufData.subarray(0,2), zlib.deflateSync(bufData.subarray(2)), Buffer.from([1,0,0])]);
     else
         bufData = Buffer.concat([bufData, Buffer.from([0,0,0])]);
     if (verboseSWGLogging) console.log(bufData.toString('hex'));
@@ -175,7 +199,7 @@ function Encrypt(bufData) {
         encrypted.writeUInt8((bufData.readUInt8(offset) ^ mask) >>> 0, offset);
     }
 
-    encrypted.writeUInt16BE(GenerateCrc(encrypted.slice(0,offset), session.CRCSeed) & 0xffff, offset);
+    encrypted.writeUInt16BE(GenerateCrc(encrypted.subarray(0,offset), session.CRCSeed) & 0xffff, offset);
 
     return encrypted;
 }
@@ -210,14 +234,6 @@ EncodeSWGPacket["ClientNetStatusRequest"] = function() {
     return Encrypt(buf);
 }
 
-EncodeSWGPacket["ServerNetStatusResponse"] = function() {
-    var buf = Buffer.alloc(32);                 //Need to send the complete 40 byte packet
-    buf.writeUInt16BE(0x08, 0);                 //00 08 - Response to server netstatus request 
-    var tick  = new Date().getTime() & 0xFFFF;  //Convert to uint16
-    buf.writeUInt16LE(tick, 2);                 //Convert to little endian (same as htons in c++)
-    return Encrypt(buf);
-}
-
 EncodeSWGPacket["SessionRequest"] = function() {
     var buf = Buffer.alloc(14);
     buf.writeUInt16BE(1, 0);
@@ -229,9 +245,9 @@ EncodeSWGPacket["SessionRequest"] = function() {
 
 DecodeSWGPacket[0xd5899226] = function(data) {
     var ret = {type: "ClientIdMsg"};
-    //console.log("4x0: " + data.slice(0, 4).toString('hex'));
+    //console.log("4x0: " + data.subarray(0, 4).toString('hex'));
     var len = data.readUInt32LE(4);
-    ret.SessionKey = data.slice(8, 8+len);
+    ret.SessionKey = data.subarray(8, 8+len);
     data.off = 8+len;
     ret.Version = AString(data);
     session.SessionKey = ret.SessionKey
@@ -246,7 +262,7 @@ EncodeSWGPacket["ClientIdMsg"] = function() {
     session.SessionKey.copy(buf, 8);
     buf.off = 8 + session.SessionKey.length;
     writeAString(buf, "20050408-18:00");
-    buf = buf.slice(0, buf.off);
+    buf = buf.subarray(0, buf.off);
     buf = Buffer.concat([header, buf]);
     return Encrypt(buf);
 }
@@ -300,7 +316,7 @@ EncodeSWGPacket["LoginClientID"] = function(data) {
     writeAString(buf, data.Username);
     writeAString(buf, data.Password);
     writeAString(buf, "20050408-18:00");
-    buf = buf.slice(0, buf.off);
+    buf = buf.subarray(0, buf.off);
     buf = Buffer.concat([header, buf]);
     return Encrypt(buf);
 }
@@ -308,7 +324,7 @@ EncodeSWGPacket["LoginClientID"] = function(data) {
 DecodeSWGPacket[0xaab296c6] = function(data) {
     var len = data.readUInt32LE(0);
     var ret = {type: "LoginClientToken",
-        SessionKey: data.slice(4,len+4),
+        SessionKey: data.subarray(4,len+4),
         StationID: data.readUInt32LE(len+4).toString(16)
     }
     data.off = len + 8;
@@ -394,7 +410,7 @@ DecodeSWGPacket[0x65ea4574] = function(data) {
             Name: name,
             Race: raceGender[0],
             Gender: raceGender[1],
-            CharacterID: data.slice(data.off+4, data.off+12),
+            CharacterID: data.subarray(data.off+4, data.off+12),
             ServerID: data.readUInt32LE(data.off+12).toString(16),
             Satus: data.readUInt32LE(data.off+16)
         };
@@ -521,8 +537,11 @@ EncodeSWGPacket["ChatQueryRoom"] = function(data) {
     var buf = Buffer.alloc(496);
     buf.writeUInt32LE(session.RequestID++, 0);
     buf.off = 4;
-    writeAString(buf, data.RoomPath);
-    buf = Buffer.concat([header, buf.slice(0, buf.off)]);
+    writeAString(buf, data.RoomPath);  
+
+    buf = Buffer.concat([header, buf.subarray(0, buf.off)]);
+    //buf = Buffer.concat([header, buf.slice(0, buf.off)]);  Deprecated
+
     return Encrypt(buf);
 }
 
@@ -667,7 +686,7 @@ EncodeSWGPacket["ChatCreateRoom"] = function(data) {
     writeAString(buf, data.RoomPath);
     writeAString(buf, data.RoomTitle || "");
     buf.writeUInt32LE(session.RequestID++, buf.off);
-    buf = Buffer.concat([header, buf.slice(0, buf.off+4)]);
+    buf = Buffer.concat([header, buf.subarray(0, buf.off+4)]);
     return Encrypt(buf);
 
 }
@@ -720,13 +739,13 @@ DecodeSWGPacket[0x35d7cc9f] = function(data) {
 
 function AString(buf) {
     var len = buf.readUInt16LE(buf.off);
-    var str = buf.slice(buf.off+2, buf.off+2+len).toString("ascii");
+    var str = buf.subarray(buf.off+2, buf.off+2+len).toString("ascii");
     buf.off += 2 + len;
     return str;
 }
 function UString(buf) {
     var len = buf.readUInt32LE(buf.off);
-    var str = buf.slice(buf.off+4, buf.off+4+len*2).toString("utf16le");
+    var str = buf.subarray(buf.off+4, buf.off+4+len*2).toString("utf16le");
     buf.off += 4 + len*2;
     return str;
 }
@@ -819,6 +838,21 @@ function truncate(string, length) {
         return string;
     }
     else {
-        return string.slice(0, length - 3) + "...";
+        return string.subarray(0, length - 3) + "...";
     }
  }
+
+//Custom timestamp generator
+function getFullTimestamp() {
+
+    date = new Date();
+    year = date.getFullYear().toString().padStart(4, '0') + "-";
+    month = (date.getMonth()+1).toString().padStart(2, '0') + "-";
+    day = date.getDate().toString().padStart(2, '0') + " ";
+    hours = date.getHours().toString().padStart(2, '0') + ":";
+    minutes = date.getMinutes().toString().padStart(2, '0') + ":";
+    seconds = date.getSeconds().toString().padStart(2, '0') + ".";
+    millisecs = date.getMilliseconds().toString().padStart(3, '0');
+
+    return year + month + day + hours + minutes + seconds + millisecs;
+}
