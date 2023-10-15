@@ -1,13 +1,20 @@
 const SOEProtocol = require("./SOEProtocol");
 const dgram = require('dgram');
 const config = require('./config');
-const verboseSWGLogging = config.SWG.verboseSWGLogging;
 
 var server = {};
 module.exports.login = function(cfg) {
     server = cfg;
     Login();
 }
+
+var verboseSWGLogging = config.SWG.verboseSWGLogging;
+module.exports.debug = function() {
+    verboseSWGLogging = true;
+    SOEProtocol.debug();
+    console.log(getFullTimestamp() + " - Enabled verbose SWG logging");
+}
+
 module.exports.isConnected = false;
 module.exports.paused = false;
 module.exports.sendChat = function(message, user) {
@@ -43,7 +50,8 @@ function handleMessage(msg, info) {
     }
     if (!packets) return;
     for (var packet of packets) {
-        if (verboseSWGLogging) console.log(getFullTimestamp() + " - recv: " + packet.type);
+        if (verboseSWGLogging)
+            console.log(getFullTimestamp() + " - recv: " + packet.type);
         if (handlePacket[packet.type])
             handlePacket[packet.type](packet);
     }
@@ -109,7 +117,7 @@ handlePacket["ChatOnEnteredRoom"] = function(packet) {
     if (packet.RoomID == server.ChatRoomID && packet.PlayerName == server.Character) {
         if (!module.exports.isConnected) {
             module.exports.isConnected = true;
-            console.log(getFullTimestamp() + " - Logged into SWG and entered chatroom");
+            console.log(getFullTimestamp() + " - Character " + packet.PlayerName + " logged into SWG and entered chatroom ID# " + packet.RoomID);
             module.exports.reconnected();
         }
         if (fails >= 3) module.exports.serverUp();
@@ -124,7 +132,17 @@ handlePacket["ChatRoomMessage"] = function(packet) {
 handlePacket["ChatInstantMessageToClient"] = function(packet) {
     module.exports.recvTell(packet.PlayerName, packet.Message);
 }
-//handlePacket["Disconnect"] = function(packet) {}  //Not sure what to do with disconnect from server
+handlePacket["ChatOnLeaveRoom"] = function(packet) {
+    if (packet.RoomID == server.ChatRoomID && packet.PlayerName == server.Character) {
+        console.log(getFullTimestamp() + " - Character " + packet.PlayerName + " has left chatroom ID# " + packet.RoomID + " with error code " + packet.Error);
+    }
+}
+
+var disconnectCount = 0;
+handlePacket["Disconnect"] = function(packet) {
+    console.log(getFullTimestamp() + " - Received Disconnect packet from server.  Connection ID = " + packet.connectionID + ".  Reason code = " + packet.reasonID + ".  Disconnect count = " + disconnectCount++);
+}
+
 //handlePacket["ServerNetStatusUpdate"] = function(packet) {} //This is network status packet from server, no response required
 
 function Login() {
@@ -144,7 +162,8 @@ function Login() {
 function send(type, data) {
     var buf = SOEProtocol.Encode(type, data);
     if (buf) {
-        if (verboseSWGLogging) console.log(getFullTimestamp() + " - send: " + type);
+        if (verboseSWGLogging)
+            console.log(getFullTimestamp() + " - send: " + type);
         if (Array.isArray(buf)) {
             for (var b of buf) {
                 socket.send(b, server.Port, server.Address);
@@ -175,7 +194,6 @@ setInterval(() => {
     var tick = new Date().getTime() & 0xFFFF;           //Convert to uint16 
     buf.writeUInt16BE(tick, 0);                         //Big or Little Endian?  Doesn't matter right now.
     buf.writeUInt16BE(0x7701, 2);                       //77 01 matches client ping
-    //console.log("Hex: " + buf.toString('hex'));
     socket.send(buf, server.PingPort, server.Address);  //Send to the ping server IP and port
 }, 1 * 1000);                                           //Let's send a ping every 1.0 seconds like the client
 

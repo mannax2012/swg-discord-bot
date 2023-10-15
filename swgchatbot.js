@@ -2,10 +2,10 @@ const Discord = require('discord.js');
 const { Client, Events, GatewayIntentBits, Partials, ActivityType, ChannelType } = require('discord.js');
 const SWG = require('./swgclient.js');
 const config = require('./config.json');
-const verboseDiscordLogging = config.Discord.verboseDiscordLogging;
+var verboseDiscordLogging = config.Discord.verboseDiscordLogging;
 
 //Make sure these are global
-var server, chat, notif, notifRole, noRole, autoRestartTimer;
+var server, chat, notificationChannel, notificationTag, notificationUserID, autoRestartTimer;
 
 const client = new Client({
     intents: [
@@ -18,20 +18,37 @@ const client = new Client({
 });
 
 console.log(getFullTimestamp() + " - Starting SWG Discord Bot");
-SWG.login(config.SWG);                      //Login with  SWG Client
-client.login(config.Discord.BotToken);      //Log Bot into Discord
+client.login(config.Discord.BotToken);                          //Log Bot into Discord
 
 // When the client is ready, run this code (only once)
 client.once(Events.ClientReady, c => {
     console.log(getFullTimestamp() + " - Discord client ready.  Logged in as " + client.user.tag);
+
+    SWG.login(config.SWG);  //Login with SWG Client
+
     client.user.setPresence({ activities: [{ name: config.Discord.PresenceName, type: ActivityType.Watching }], status: 'online' });
     server = client.guilds.cache.get(config.Discord.ServerID);
-    chat = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
-    notif = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
-    notifRole = server.roles.cache.find(nr => nr.name === config.Discord.NotificationMentionRole);
-    noRole = notifRole;
-    if (!notifRole) {
-        notifRole = config.Discord.NotificationMentionUserID;
+    chatChannel = client.channels.cache.find(cc => cc.name === config.Discord.ChatChannel);
+
+    //Server up/down notification stuff here
+    notificationChannel = client.channels.cache.find(nc => nc.name === config.Discord.NotificationChannel);
+    if (!notificationChannel) {
+        console.log(getFullTimestamp() + " - No notification channel could be found.  There will be no server up/down notifications");
+    }
+
+    var notificationRole = server.roles.cache.find(nr => nr.name === config.Discord.NotificationMentionRole);
+    notificationUserID = config.Discord.NotificationMentionUserID;
+
+    if (notificationRole) {//Found a valid role
+        if (verboseDiscordLogging) 
+            console.log(getFullTimestamp() + " - Found valid notification role = " + notificationRole);
+        notificationTag = "<@&" + notificationRole + "> ";
+    }
+    else {
+        notificationRole = notificationUserID;
+        if (verboseDiscordLogging && notificationRole) 
+            console.log(getFullTimestamp() + " - Found a notification user ID = " + notificationRole);
+        notificationTag = (notificationRole) ? "<@" + notificationRole + "> " : "";
     }
 
     // Restart bot every X minutes if configured
@@ -44,6 +61,8 @@ client.once(Events.ClientReady, c => {
         }, autoRestartTimer * 60 * 1000);
     }
 
+    //Let's see if a ping every 30 seconds prevents desync
+    //setInterval(() => SWG.sendTell(config.SWG.Character, "ping"), 30 * 1000);
 });
 
 client.on("messageCreate", async (message) => {
@@ -54,13 +73,13 @@ client.on("messageCreate", async (message) => {
         console.log("message.channel.type = " + message.channel.type);
     }
 
-    if (message.author.username == config.Discord.BotName)
+    if (message.author.username === config.Discord.BotName)
         return;
 
-    if (message.channel.type === ChannelType.DM)    // Ignore DMs
+    if (message.channel.type === ChannelType.DM && message.author.id != notificationUserID)    // Ignore DMs from everyone except the notificationUserID user
         return;
 
-    if (message.channel.name != config.Discord.ChatChannel && message.channel.name != config.Discord.NotificationChannel)
+    if (message.channel.type === ChannelType.GuildText && message.channel.name != config.Discord.ChatChannel && message.channel.name != config.Discord.NotificationChannel)
         return;
 
     var sender = server.members.cache.get(message.author.id).displayName;    // Get server displayName, if not available will use global displayName
@@ -76,14 +95,21 @@ client.on("messageCreate", async (message) => {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
     if (messageContent.startsWith('!fixchat')) {
-        message.reply("rebooting chat bot");
+        message.reply("Rebooting chat bot");
         console.log(getFullTimestamp() + " - Received !fixchat request from " + sender);
         setTimeout(() => { process.exit(0); }, 500);  //Exit in 500 ms, allow time for reply to be sent
     }
     if (messageContent.startsWith('!pausechat')) {
-        message.reply(SWG.paused ? "unpausing" : "pausing");
-        console.log(getFullTimestamp() + " - Received pausechat request from " + sender);
+        message.reply(SWG.paused ? "Un-pausing chatbot" : "Pausing chatbot");
+        console.log(getFullTimestamp() + " - Received !pausechat request from " + sender);
         SWG.paused = !SWG.paused;
+    }
+
+    if (messageContent.startsWith('!debugchat') && message.author.id == notificationUserID) {
+        message.reply("Enabling chatbot debug mode");
+        console.log(getFullTimestamp() + " - Received !debugchat request from " + sender + ", sender = " + message.author.username);
+        verboseDiscordLogging = true;
+        SWG.debug();
     }
 
     if (message.channel.name != config.Discord.ChatChannel) { // Only send specific chat channel text to SWG
@@ -94,39 +120,34 @@ client.on("messageCreate", async (message) => {
 });
 
 client.on('disconnect', event => {
-    try {notif.send(config.Discord.BotName + " disconnected");}catch(ex){}
-    client = server = notif = chat = notifRole = null;
+    try {       
+        notificationChannel.send(config.Discord.BotName + " disconnected");
+    }
+    catch (ex) {}
+    client = server = chatChannel = notificationChannel = notificationTag = notificationUsername = autoRestartTimer = null;
     console.log(getFullTimestamp() + " - Discord disconnect: " + JSON.stringify(event,null,2));
     process.exit(0);
-    //setTimeout(discordBot, 1000);  Not going to automatically connect due to PM2 so will will just exit when bot disconnects
 });
 
 SWG.serverDown = function() {
-    if (notif) {
-        if (noRole) //Have a role, send to that
-            prefix = "<@&"
-        else
-            prefix = "<@"
-        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is DOWN!");
+    if (notificationChannel) {
+        notificationChannel.send(notificationTag + "The server " + config.SWG.SWGServerName + " is DOWN!");
+        console.log(getFullTimestamp() + " - The server " + config.SWG.SWGServerName + " is DOWN!");
     }
 }
 
 SWG.serverUp = function() {
-    if (notif) {
-        if (noRole) //Have a role, send to that
-            prefix = "<@&"
-        else
-            prefix = "<@"
-        notif.send(prefix + notifRole + "> The server " + config.SWG.SWGServerName + " is UP!");
+    if (notificationChannel) {
+        notificationChannel.send(notificationTag + "The server " + config.SWG.SWGServerName + " is UP!");
+        console.log(getFullTimestamp() + " - The server " + config.SWG.SWGServerName + " is UP!");
     }
 }
 
 SWG.recvChat = function(message, player) {
-    if (verboseDiscordLogging) {
-        console.log(getFullTimestamp() + " - sending chat to Discord " + player + ": " + message);
-    }
-    if (chat) {
-        chat.send("**" + player + ":**  " + message);
+    if (verboseDiscordLogging) 
+        console.log(getFullTimestamp() + " - Sending chat to Discord.  Player = " + player + ", message = " + message);
+    if (chatChannel) {
+        chatChannel.send("**" + player + ":**  " + message);
     }
     else {
         console.log(getFullTimestamp() + " - Discord disconnected");
