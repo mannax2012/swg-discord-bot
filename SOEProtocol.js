@@ -1,8 +1,14 @@
 const zlib = require('zlib');
 const crypto = require('crypto');
 const config = require('./config');
-const verboseSWGLogging = config.SWG.verboseSWGLogging;
 const session = {lastAck: -1, lastSequence: -1};
+
+var verboseSWGLogging = config.SWG.verboseSWGLogging;
+
+module.exports.debug = function () {
+    verboseSWGLogging = true;
+    console.log("Enabled verbose SOEProtocol logging");
+}
 
 var fragments = null, fragmentLength;
 var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
@@ -12,7 +18,7 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     var len, opcode;
 
     if (verboseSWGLogging) {
-        console.log(getFullTimestamp() + " - Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toUpperCase().padStart(4, 0)  + " from server.");  
+        console.log(getFullTimestamp() + " - Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toUpperCase().padStart(4, 0)  + " from server."); 
         console.log("Hex: " + buf.toString('hex'));
         console.log("ASCII: " + buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
     }
@@ -28,7 +34,6 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     else if (SOEHeader == 0x0002) {
         session.type = "SessionResponse";
         session.connectionID = buf.readUInt32BE(2);
-        //console.log(getFullTimestamp() + " - Received SessionResponse packet from the server.  Connection ID = " + session.connectionID.toString(16).toUpperCase().padStart(8, 0) + ".");
         session.CRCSeed = buf.readUInt32BE(6);
         session.CRCLength = buf.readUInt8(10);
         session.UseCompression = buf.readUInt8(11);
@@ -46,16 +51,15 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
         while (offset < buf.length - 3) {
             len = buf.readUInt8(offset);
             ret.push(DecodeSOEPacket(buf.subarray(offset + 1, offset + len + 1), true));
-            //ret.push(DecodeSOEPacket(buf.slice(offset + 1, offset + len + 1), true));
-            offset += len + 1;
+              offset += len + 1;
         }
         return ret;
     }
     else if (SOEHeader == 0x0005) {
-        var connectionID = buf.readUInt32BE(2);
-        var reasonID = buf.readUInt8(6);
-        console.log(getFullTimestamp() + " - Received Disconnect packet from server.  Connection ID = " + connectionID + ".  Reason code = " + reasonID + ".");
-        //return [{type: "Disconnect"}];
+        var ret = {type: "Disconnect"};
+        ret.connectionID = buf.readUInt32BE(2);
+        ret.reasonID = buf.readUInt8(6);
+        return ret;
     }
     else if (SOEHeader == 0x0008) { 
         //return [{type: "ServerNetStatusUpdate"}];
@@ -74,18 +78,32 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
                 offset++;
                 operands = buf.readUInt16LE(offset);
                 opcode = buf.readUInt32LE(offset + 2);
-                if (!DecodeSWGPacket[opcode]) 
+                if (verboseSWGLogging && !ignoreTable[opcode])
+                    console.log(getFullTimestamp() + " - Received packet with operands 0x1900, opcode " + opcodeLookup(opcode) + " (0x" +  opcode.toString(16).toLowerCase().padStart(8, 0)  + ") from server."); 
+                if (!DecodeSWGPacket[opcode]) {
                     ret.push({type: opcode.toString(16) + " " + len});
-                else
-                    ret.push(DecodeSWGPacket[opcode](buf.subarray(offset + 6, offset + len)));
+                }
+                else {
+                    var data = buf.subarray(offset + 6, offset + len);
+                    if (verboseSWGLogging) {
+                        console.log(getFullTimestamp() + " - Received " + data.length +  " byte packet with opcode " + opcodeLookup(opcode) + " (0x" +  opcode.toString(16).toLowerCase().padStart(8, 0)  + ") from server."); 
+                        console.log("Hex: " + data.toString('hex'));
+                        console.log("ASCII: " + data.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
+                    }
+                    ret.push(DecodeSWGPacket[opcode](data));
+                }
                 offset += len;
             }
             return ret;
         }
         opcode = buf.readUInt32LE(6);
+        if (verboseSWGLogging && !ignoreTable[opcode])
+            console.log(getFullTimestamp() + " - Received packet with operands 0x1900, opcode " + opcodeLookup(opcode) + " (0x" +  opcode.toString(16).toLowerCase().padStart(8, 0)  + ") from server.");
         len = buf.length - 7;
-        if (!DecodeSWGPacket[opcode]) return [{type: opcode.toString(16) + " " + len}];
-        return [DecodeSWGPacket[opcode](buf.subarray(10, decrypted ? buf.length : -3))];
+         if (!DecodeSWGPacket[opcode])
+            return [{type: opcode.toString(16) + " " + len}];
+        else
+            return [DecodeSWGPacket[opcode](buf.subarray(10, decrypted ? buf.length : -3))];
     }
     else if (SOEHeader == 0x000d) {
         var sequence = buf.readUInt16BE(2);
@@ -96,7 +114,7 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
             fragments = buf.subarray(8,-3);
         } else {
             fragments = Buffer.concat([fragments, buf.subarray(4, -3)]);
-            if (verboseSWGLogging) console.log("fragment", fragments.length , "/", fragmentLength);
+            //console.log("fragment", fragments.length , "/", fragmentLength);
             if (fragments.length == fragmentLength) {
                 buf = fragments;
                 fragments = null;
@@ -106,7 +124,7 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
                 var ret = [DecodeSWGPacket[opcode](buf.subarray(6))];
                 return ret;
             } else if (fragments.length > fragmentLength) {
-                if (verboseSWGLogging) console.log("extra data fragment", fragments.length , "/", fragmentLength);
+                //console.log("extra data fragment", fragments.length , "/", fragmentLength);
                 fragments = null;
             }
         }
@@ -115,9 +133,9 @@ var DecodeSOEPacket = module.exports.Decode = function(buf, decrypted) {
     else if (SOEHeader == 0x0015) {
         return [{type: "Ack", sequence: buf.readUInt16BE(2)}];
     }
-    else {
+    else { //Ignore any other header types
         if (verboseSWGLogging) {
-            console.log(getFullTimestamp() + " : Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toUpperCase().padStart(4, 0)  + " from server.");  
+            console.log(getFullTimestamp() + " : Received " + buf.length +  " byte packet with header 0x" +  SOEHeader.toString(16).toLowerCase().padStart(4, 0)  + " from server.");  
             console.log("Hex: " + buf.toString('hex'));
             console.log("ASCII: " + buf.toString('ascii').replace(/[^A-Za-z0-9!"#$%&'()*+,.\/:;<=>?@\[\] ^_`{|}~-]/g, ' ').split('').join(' '));
         }
@@ -130,7 +148,6 @@ module.exports.Encode = function(type, data) {
 
 function Decrypt(bufData) {
 
-    //console.log("Entering Decrypt function");
     var decrypted = Buffer.alloc(bufData.length);
     decrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 
@@ -151,13 +168,14 @@ function Decrypt(bufData) {
 
     decrypted.writeUInt16BE(bufData.readUInt16BE(offset), offset);
 
-    try {
-        var decompressedData = zlib.inflateSync(decrypted.subarray(2, -3));
-        return Buffer.concat([decrypted.subarray(0,2), decompressedData, decrypted.subarray(-3)]);
-    }
-    catch(err) {
-        return decrypted;
-    }
+    if (decrypted.readUInt8(decrypted.length-3) == 1) {
+        try {
+            return Buffer.concat([decrypted.subarray(0,2), zlib.inflateSync(decrypted.subarray(2, -3)), decrypted.subarray(-3)]);
+        }
+        catch(err) {}
+    }   
+    
+    return decrypted;
 }
 
 function Encrypt(bufData) {
@@ -182,7 +200,7 @@ function Encrypt(bufData) {
         bufData = Buffer.concat([bufData.subarray(0,2), zlib.deflateSync(bufData.subarray(2)), Buffer.from([1,0,0])]);
     else
         bufData = Buffer.concat([bufData, Buffer.from([0,0,0])]);
-    if (verboseSWGLogging) console.log(bufData.toString('hex'));
+    //console.log(bufData.toString('hex'));
     var encrypted = Buffer.alloc(bufData.length);
     encrypted.writeUInt16BE(bufData.readUInt16BE(0), 0);
 
@@ -420,14 +438,16 @@ DecodeSWGPacket[0x65ea4574] = function(data) {
 }
 
 DecodeSWGPacket[0x20e4dbe3] = function(data) {
+    var ret = {type:"ChatSendToRoom"};
     data.off = 0;
-    return {type: "ChatSendToRoom",
-        Message: UString(data),
-        Spacer: data.readUInt32LE(data.off),
-        RoomID: data.readUInt32LE(data.off+4),
-        MessageCounter: data.readUInt32LE(data.off+8)
-    }
+    ret.Message = UString(data);
+    ret.Spacer = data.readUInt32LE(data.off);
+    ret.RoomID = data.readUInt32LE(data.off + 4);
+    ret = MessageCounter = data.readUInt32LE(data.off + 8);
+    //console.log(getFullTimestamp() + " - ChatSendToRoom:  Received " + data.length +  " byte ChatSendToRoom packet with message:  " + ret.Message);
+    return ret;
 }
+
 messageCounter = 1;
 EncodeSWGPacket["ChatSendToRoom"] = function(data) {
     var chatMessage = truncate(data.Message, 2000);    //Going to truncate messages at 2000 characters to stay under the max buffer size of 5000
@@ -437,7 +457,6 @@ EncodeSWGPacket["ChatSendToRoom"] = function(data) {
     buf.fill(0, buf.off, buf.off+4);
     buf.writeUInt32LE(data.RoomID, buf.off+4);
     buf.writeUInt32LE(messageCounter++, buf.off+8);
-    //console.log(buf.toString('hex'));
     return Encrypt(buf);
 }
 
@@ -472,23 +491,24 @@ DecodeSWGPacket[0x3c565ced] = function(data) {
 }
 
 DecodeSWGPacket[0xcd4ce444] = function(data) {
+    var ret = {type: "ChatRoomMessage"};
     data.off = 0;
     AString(data);//SWG
     AString(data);//server
-    var ret = {type: "ChatRoomMessage",
-        CharacterName: AString(data),
-        RoomID: data.readUInt32LE(data.off)
-    };
+    ret.CharacterName = AString(data);
+    ret.RoomID = data.readUInt32LE(data.off)
     data.off += 4;
     ret.Message = UString(data);
     ret.OutOfBandPackage = UString(data);
+    console.log(getFullTimestamp() + " - ChatRoomMessage:  Received " + data.length +  " byte ChatRoomMessage packet from player " + ret.CharacterName + " with message:  " + ret.Message);
     return ret;
 }
 DecodeSWGPacket[0xe7b61633] = function(data) {
-    return {type: "ChatOnSendRoom",
-        ErrorCode: data.readUInt32LE(0),
-        MessageID: data.readUInt32LE(4)
-    }
+    var ret = {type: "ChatOnSendRoom"};
+    ret.ErrorCode = data.readUInt32LE(0);
+    ret.MessageID = data.readUInt32LE(4);
+    //console.log(getFullTimestamp() + " - ChatOnSendRoom:  Received " + data.length +  " byte ChatOnSendRoom packet with MessageID:  " + ret.MessageID);
+    return ret;
 }
 
 DecodeSWGPacket[0x43fd1c22] = function() {
@@ -514,15 +534,30 @@ EncodeSWGPacket["ChatEnterRoomById"] = function(data) {
 }
 
 DecodeSWGPacket[0xe69bdc0a] = function(data) {
+
+    var ret = {type: "ChatOnEnteredRoom"};
     data.off = 0;
-    AString(data);//SWG
-    AString(data);//galaxy
-    return {type: "ChatOnEnteredRoom",
-        PlayerName: AString(data),
-        Error: data.readUInt32LE(data.off),
-        RoomID: data.readUInt32LE(data.off+4),
-        RequestID: data.readUInt32LE(data.off+8)
-    }
+    AString(data);  //Game Name = SWG
+    AString(data);  //Galaxy Name
+    ret.PlayerName = AString(data); //Player name is third string
+    ret.Error = data.readUInt32LE(data.off);
+    ret.RoomID = data.readUInt32LE(data.off+4);
+    ret.RequestID = data.readUInt32LE(data.off+8);
+
+    return ret;
+}
+
+DecodeSWGPacket[0x60b5098b] = function(data) {
+
+    var ret = {type: "ChatOnLeaveRoom"};
+    data.off = 0;
+    AString(data); //Game Name = SWG
+    AString(data); //Galaxy Name
+    ret.PlayerName = AString(data); //Player name is third string
+    ret.Error = data.readUInt32LE(data.off);
+    ret.RoomID = data.readUInt32LE(data.off+4);
+    
+    return ret;
 }
 
 DecodeSWGPacket[0x9cf2b192] = function(data) {
@@ -540,7 +575,6 @@ EncodeSWGPacket["ChatQueryRoom"] = function(data) {
     writeAString(buf, data.RoomPath);  
 
     buf = Buffer.concat([header, buf.subarray(0, buf.off)]);
-    //buf = Buffer.concat([header, buf.slice(0, buf.off)]);  Deprecated
 
     return Encrypt(buf);
 }
@@ -638,9 +672,11 @@ DecodeSWGPacket[0x70deb197] = function(data) {
     return ret;
 }
 
+/*
 DecodeSWGPacket[0x80ce5e46] = function() {
     return {type:"ObjectController", TODO: "Main event for interacting with world"}
 }
+*/
 
 DecodeSWGPacket[0xf898e25f] = function(data) {
     data.off = 0;
@@ -689,12 +725,6 @@ EncodeSWGPacket["ChatCreateRoom"] = function(data) {
     buf = Buffer.concat([header, buf.subarray(0, buf.off+4)]);
     return Encrypt(buf);
 
-}
-DecodeSWGPacket[0x60b5098b] = function(data) {
-    data.off = 0;
-    AString(data); //SWG
-    AString(data); //server
-    return {type:"ChatOnLeaveRoom", PlayerName: AString(data), RoomID: data.readUInt32LE(data.off+4)}
 }
 
 DecodeSWGPacket[0x6137556f] = function() {
@@ -855,4 +885,238 @@ function getFullTimestamp() {
     millisecs = date.getMilliseconds().toString().padStart(3, '0');
 
     return year + month + day + hours + minutes + seconds + millisecs;
+}
+
+const opcodeTable = {
+    0x9ca80f98: "AbortTradeMessage",
+    0xc58a446e: "AcceptAuctionResponseMessage",
+    0xb131ca17: "AcceptTransactionMessage",
+    0x69d3e1d2: "AddItemFailedMessage",
+    0x1e8d1356: "AddItemMessage",
+    0xab2174b6: "AddMapLocationMessage",
+    0x5efe4f1c: "AiDebugString",
+    0xa04a3eca: "AppendCommentResponseMessage",
+    0xf3f12f2a: "AttributeListMessage",
+    0x679e0d00: "AuctionQueryHeadersMessage",
+    0xfa500e52: "AuctionQueryHeadersResponseMessage",
+    0x6d89d25b: "BadgesResponseMessage",
+    0x68a75f0c: "BaselinesMessage",
+    0x325932d8: "BeginTradeMessage",
+    0xe7491df5: "BeginVerificationMessage",
+    0x91125453: "BidAuctionMessage",
+    0x8fcbef4a: "BidAuctionResponseMessage",
+    0x3687a4d2: "CancelLiveAuctionMessage",
+    0x7da2246c: "CancelLiveAuctionResponseMessage",
+    0xd6fbf318: "CancelTicketResponseMessage",
+    0x9b3a17c4: "CharacterSheetResponseMessage",
+    0x6fe7bd90: "ChatAddFriend",
+    0xd9fa0194: "ChatBanAvatarFromRoom",
+    0x35366bed: "ChatCreateRoom",
+    0x772a4b09: "ChatDestroyRoom",
+    0xbc6bddf2: "ChatEnterRoomById",
+    0x6cd2fcd8: "ChatFriendsListUpdate",
+    0x84bb21f7: "ChatInstantMessageToCharacter",
+    0x3c565ced: "ChatInstantMessageToClient",
+    0xd3ec7372: "ChatInviteAvatarToRoom",
+    0x36a03858: "ChatOnAddModeratorToRoom",
+    0x5a38538d: "ChatOnBanAvatarFromRoom",
+    0xd72fe9be: "ChatOnConnectAvatar",
+    0x35d7cc9f: "ChatOnCreateRoom",
+    0x4f23965a: "ChatOnDeleteAllPersistentMessages",
+    0xe8ec5877: "ChatOnDestroyRoom",
+    0xe69bdc0a: "ChatOnEnteredRoom",
+    0x493fe74a: "ChatOnInviteToRoom",
+    0x60b5098b: "ChatOnLeaveRoom",
+    0xc17eb06d: "ChatOnReceiveRoomInvitation",
+    0x1342fc47: "ChatOnRemoveModeratorFromRoom",
+    0x88dbb381: "ChatOnSendInstantMessage",
+    0x94e7a7ae: "ChatOnSendPersistantMessage",
+    0xe7b61633: "ChatOnSendRoom",
+    0xe7b61633: "ChatOnSendRoomMessage",
+    0xbaf9b815: "ChatOnUnbanAvatarFromRoom",
+    0xbe33c7e8: "ChatOnUninviteFromRoom",
+    0x08485e17: "ChatPersistentMessageToClient",
+    0x25a29fa6: "ChatPersistentMessageToServer",
+    0x9cf2b192: "ChatQueryRoom",
+    0xc4de864e: "ChatQueryRoomResults",
+    0x048e3f8a: "ChatRemoveModeratorFromRoom",
+    0x4c3d2cfa: "ChatRequestRoomList",
+    0x70deb197: "ChatRoomList",
+    0xcd4ce444: "ChatRoomMessage",
+    0x20e4dbe3: "ChatSendToRoom",
+    0x7102b15f: "ChatServerStatus",
+    0x6d2a6413: "ChatSystemMessage",
+    0xf1018dfc: "ChatUninviteFromRoom",
+    0xb97f3074: "ClientCreateCharacter",
+    0xdf333c6e: "ClientCreateCharacterFailed",
+    0x1db575cc: "ClientCreateCharacterSuccess",
+    0xd5899226: "ClientIdMsg",
+    0x0f5d5325: "ClientInactivity",
+    0x0f5d5325: "ClientInactivityMessage",
+    0x2d2d6ee1: "ClientMfdStatusUpdateMessage",
+    0x2d2d6ee1: "ClientOpenContainerMessage",
+    0xe00730e5: "ClientPermissions",
+    0x2d2d6ee1: "ClientPermissionsMessage",
+    0xd6d1b6d1: "ClientRandomNameRequest",
+    0xe85fb868: "ClientRandomNameResponse",
+    0x32b79b7e: "ClosedContainerMessage",
+    0xc0938a9d: "CloseHolocronMessage",
+    0x43fd1c22: "CmdSceneReady",
+    0x3ae6dfae: "CmdStartScene",
+    0x48f493c5: "CommoditiesItemTypeListRequest",
+    0xd4e937fc: "CommoditiesItemTypeListResponse",
+    0x1590f63c: "ConectionServerLagResponse",
+    0x08c5fc76: "ConGenericMessage",
+    0xb1921ad9: "ConnectionClosed",
+    0x3b882f0e: "ConnectionServerConnectionClosed",
+    0x3ca2f9a7: "ConnectionServerConnectionOpened",
+    0x2e365218: "ConnectPlayer",
+    0x2e365218: "ConnectPlayerMessage",
+    0x6137556f: "ConnectPlayerResponse",
+    0x6137556f: "ConnectPlayerResponseMessage",
+    0x99dcb094: "ConsentRequestMessage",
+    0x1d0247ad: "CreateAuctionMessage",
+    0x0e61cc92: "CreateAuctionResponseMessage",
+    0x71957628: "CreateClientPathMessage",
+    0x1e9ce308: "CreateImmediateAuctionMessage",
+    0x721cf08b: "CreateMissileMessage",
+    0x65f27987: "CreateNebulaLightningMessage",
+    0xb88af9a5: "CreateProjectileMessage",
+    0x550a407a: "CreateTicketResponseMessage",
+    0x32cd924b: "CuiControlsMenuBindEntry::Messages::UPDATE_BINDING",
+    0xaa867c55: "CuiIoWin::Messages::CONTROL_KEY_DOWN",
+    0x81573066: "CuiIoWin::Messages::CONTROL_KEY_UP",
+    0x399ec0ea: "CuiIoWin::Messages::POINTER_INPUT_TOGGLED",
+    0xe78fb0bf: "CuiLoadingManager::FullscreenLoadingDisabled",
+    0x28956a79: "CuiSpatialChatManager::Messages::CHAT_RECEIVED",
+    0xd0cdaa62: "DebugTransformMessage",
+    0xe87ad031: "DeleteCharacterMessage",
+    0x8268989b: "DeleteCharacterReplyMessage",
+    0x12862153: "DeltasMessage",
+    0x6ec28670: "DenyTradeMessage",
+    0xa75e85eb: "DestroyClientPathMessage",
+    0x3871d784: "DestroyShipComponentMessage",
+    0x5c680884: "DestroyShipMessage",
+    0xca2a548b: "DogfightTauntPlayerMessage",
+    0x023320d5: "EditAppearanceMessage",
+    0x305e8c28: "EditStatsMessage",
+    0xe8a54dc1: "EnterStructurePlacementModeMessage",
+    0x904dae1a: "EnterTicketPurchaseModeMessage",
+    0x65ea4574: "EnumerateCharacterId",
+    0xb5abf91a: "ErrorMessage",
+    0xb1cfce1c: "ExecuteConsoleCommand",
+    0x5dd53957: "FactionResponseMessage",
+    0x4e428088: "GalaxyLoopTimesResponse",
+    0xbbadaeb9: "Game::SCENE_CHANGED",
+    0xb93e9488: "GameConnectionClosed",
+    0xbe144221: "GameConnectionOpened",
+    0x789a4e0a: "GameServerLagResponse",
+    0x5e7b4546: "GetArticleMessage",
+    0x934baee0: "GetArticleResponseMessage",
+    0xd36efae4: "GetAuctionDetails",
+    0xfe0e644b: "GetAuctionDetailsResponse",
+    0xeadb08ca: "GetCommentsResponseMessage",
+    0x1a7ab839: "GetMapLocationsMessage",
+    0x9f80464c: "GetMapLocationsResponseMessage",
+    0xbb567f98: "GetTicketsResponseMessage",
+    0xd1527ee8: "GiveMoneyMessage",
+    0x32263f20: "GuildResponseMessage",
+    0xcbf88482: "HyperspaceMessage",
+    0x4eb0b06a: "IsFlattenedTheaterMessage",
+    0x21b55a3b: "IsVendorMessage",
+    0xce04173e: "IsVendorOwnerResponseMessage",
+    0xc5ed2f85: "LagReport",
+    0x31805ee0: "LagRequest",
+    0x8de7e213: "LaunchBrowserMessage",
+    0xa16cf9af: "LinkDeadMessage",
+    0x41131f96: "LoginClientID",
+    0xaab296c6: "LoginClientToken",
+    0x3436aeb6: "LoginClusterStatus",
+    0xc38256f0: "LoginConnectionClosed",
+    0xc4a88059: "LoginConnectionOpened",
+    0xc11c63b9: "LoginEnumCluster",
+    0x42fd19dd: "LogoutMessage",
+    0xca375124: "NewbieTutorialEnableHudElement",
+    0x90dd61af: "NewbieTutorialRequest",
+    0xca88fbad: "NewbieTutorialResponse",
+    0x274f4e78: "NewTicketActivity",
+    0x6ea42d80: "NewTicketActivityResponseMessage",
+    0x80ce5e46: "ObjControllerMessage",
+    0x80ce5e46: "ObjectController",
+    0x7ca18726: "ObjectMenuSelectMessage::MESSAGE_TYPE",
+    0x2e11e4ab: "OpenedContainerMessage",
+    0x7cb65021: "OpenHolocronToPageMessage",
+    0x487652da: "ParametersMessage",
+    0x52f364b8: "PermissionListCreateMessage",
+    0x96405d4d: "PlanetTravelPointListRequest",
+    0x4d32541f: "PlanetTravelPointListResponse",
+    0x8855434A: "PlayClientEffectLocMessage",
+    0x8855434a: "PlayClientEffectObjectMessage",
+    0x4f5e09b6: "PlayClientEffectObjectTransformMessage",
+    0x0a4e222c: "PlayClientEventLocMessage",
+    0xaf83c3f2: "PlayClientEventObjectMessage",
+    0x367e737e: "PlayerMoneyResponse",
+    0x04270d8a: "PlayMusicMessage",
+    0x88d9885c: "PopulateMissionBrowserMessage",
+    0x4417af8b: "RemoveItemMessage",
+    0xf898e25f: "RequestCategories",
+    0x61148fd4: "RequestCategoriesResponseMessage",
+    0x8e33ed05: "RequestExtendedClusterInfo",
+    0x7d842d68: "RequestGalaxyLoopTimes",
+    0xbd18c679: "ResourceHarvesterActivatePageMessage",
+    0x8a64b1d5: "ResourceListForSurveyMessage",
+    0x12b0d449: "RetrieveAuctionItemMessage",
+    0x9499ef8c: "RetrieveAuctionItemResponseMessage",
+    0x5f628053: "SaveTextOnClient",
+    0xfe89ddea: "SceneCreateObjectByCrc",
+    0x4d45d504: "SceneDestroyObject",
+    0x2c436037: "SceneEndBaselines",
+    0x962e8b9b: "SearchKnowledgeBaseMessage",
+    0x7cbc8f67: "SearchKnowledgeBaseResponseMessage",
+    0xb5098d76: "SelectCharacter",
+    0x2ebc3bd9: "ServerTimeMessage",
+    0x486356ea: "ServerWeatherMessage",
+    0x763648d0: "ShipUpdateTransformCollisionMessage",
+    0x76026fb9: "ShipUpdateTransformMessage",
+    0xefac38c4: "StatMigrationTargetsMessage",
+    0xad6f6b26: "StopClientEffectObjectByLabelMessage",
+    0xd44b7259: "SuiCreatePageMessage",
+    0x092d3564: "SuiEventNotification",
+    0x990b5de0: "SuiForceClosePage",
+    0x5f3342f6: "SuiUpdatePageMessage",
+    0x877f79ac: "SurveyMessage",
+    0xc542038b: "TradeCompleteMessage",
+    0xe81e4382: "UnAcceptTransactionMessage",
+    0xf612499c: "UpdateCellPermissionMessage",
+    0x56cbde9e: "UpdateContainmentMessage",
+    0x1228cd01: "UpdateMissileMessage",
+    0x0bde6b41: "UpdatePostureMessage",
+    0x08a1c126: "UpdatePvpStatusMessage",
+    0x1b24f808: "UpdateTransformMessage",
+    0xc867ab5a: "UpdateTransformWithParentMessage",
+    0xf4c498fd: "VerifyPlayerNameResponseMessage",
+    0x9ae247ee: "VerifyTradeMessage"
+};
+
+const opcodeLookup = (opcode) => opcodeTable[opcode] || "NotMapped";
+
+const ignoreTable = {
+    0x68a75f0c: "BaselinesMessage",
+    0xe8ec5877: "ChatOnDestroyRoom",
+    0x12862153: "DeltasMessage",
+    0x80ce5e46: "ObjectController",
+    0x487652da: "ParametersMessage",
+    0x8855434A: "PlayClientEffectLocMessage",
+    0x8855434a: "PlayClientEffectObjectMessage",
+    0x4f5e09b6: "PlayClientEffectObjectTransformMessage",
+    0x0a4e222c: "PlayClientEventLocMessage",
+    0xaf83c3f2: "PlayClientEventObjectMessage",
+    0xfe89ddea: "SceneCreateObjectByCrc",
+    0x4d45d504: "SceneDestroyObject",
+    0x2c436037: "SceneEndBaselines",
+    0x486356ea: "ServerWeatherMessage",
+    0xf612499c: "UpdateCellPermissionMessage",
+    0x56cbde9e: "UpdateContainmentMessage",
+    0x08a1c126: "UpdatePvpStatusMessage",
+    0x1b24f808: "UpdateTransformMessage",
 }
