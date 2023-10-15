@@ -500,7 +500,7 @@ DecodeSWGPacket[0xcd4ce444] = function(data) {
     data.off += 4;
     ret.Message = UString(data);
     ret.OutOfBandPackage = UString(data);
-    console.log(getFullTimestamp() + " - ChatRoomMessage:  Received " + data.length +  " byte ChatRoomMessage packet from player " + ret.CharacterName + " with message:  " + ret.Message);
+    //console.log(getFullTimestamp() + " - ChatRoomMessage:  Received " + data.length +  " byte ChatRoomMessage packet from player " + ret.CharacterName + " with message:  " + ret.Message);
     return ret;
 }
 DecodeSWGPacket[0xe7b61633] = function(data) {
