@@ -6,9 +6,11 @@ Since it's constantly in communication with the game server, it knows quickly wh
 
 The bot supports three special commands from Discord, and it will listen in the default channel for the commands and the notification channel.  The notification user can also send DM messages to the bot.
 
-!fixchat - Restarts the bot
-!pausechat - Toggles the bot from paused to not paused
-!debugchat - Turns on verbose logging for all modules
+* !fixchat - Restarts the bot
+
+* !pausechat - Toggles the bot from paused to not paused
+
+* !debugchat - Turns on verbose logging for all modules
 
 ## Getting Started
 
@@ -20,7 +22,7 @@ Then, create a new game account (or use an existing non-admin account with a fre
 
 Download this repository to a folder, cd to that folder and run.
 
-```sh
+```
 npm install
 ```
 
@@ -81,31 +83,31 @@ For instance:
 
 Finally run the bot with:
 
-```sh
+```
 node swgchatbot.js
 ```
 
 Better yet, to handle any unexpected errors get forever or PM2
 
-```sh
+```
 sudo npm install forever -g
 ```
 
 or
 
-```sh
+```
 sudo npm install pm2 -g
 ```
 
 and run with
 
-```sh
+```
 forever start swgchatbot.js
 ```
 
 or
 
-```sh
+```
 pm2 start swgchatbot.js
 ```
 
