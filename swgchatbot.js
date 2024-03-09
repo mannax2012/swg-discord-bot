@@ -73,7 +73,7 @@ client.on("messageCreate", async (message) => {
         console.log("message.channel.type = " + message.channel.type);
     }
 
-    if (message.author.username === config.Discord.BotName)
+    if (message.author.username.toLowerCase() === config.Discord.BotName.toLowerCase())
         return;
 
     if (message.channel.type === ChannelType.DM && message.author.id != notificationUserID)    // Ignore DMs from everyone except the notificationUserID user
