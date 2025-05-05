@@ -1,6 +1,6 @@
 {
   "name": "swg-discord-bot",
-  "version": "1.0.3",
+  "version": "2.0.0",
   "author": "By Progor, updated by Infinity Developers and Cyclone of Awakening",
   "description": "Transfer chat messages from Discord to SWG and back",
   "main": "swgchatbot.js",
@@ -9,7 +9,7 @@
   },
   "license": "CC0-1.0",
   "dependencies": {
-    "discord.js": "^14.11.0",
+    "discord.js": "^14.12.1",
     "uws": "^200.0.0"
   }
 }
