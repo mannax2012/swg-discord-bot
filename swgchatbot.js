@@ -94,10 +94,31 @@ client.on("messageCreate", async (message) => {
     if (messageContent.startsWith('!server')) {
         message.reply(config.SWG.SWGServerName + (SWG.isConnected ? " is UP!" : " is DOWN :("));
     }
+    const { spawn } = require('child_process');
+
+    function startSWGBot() {
+        const botProcess = spawn('node', ['swgchatbot.js']);
+    
+        botProcess.on('exit', (code) => {
+            console.log(`SWGBot process exited with code ${code}. Restarting...`);
+            startSWGBot(); // Restart immediately
+        });
+    
+        botProcess.stdout.on('data', (data) => {
+            console.log(`${data}`);
+        });
+    
+        botProcess.stderr.on('data', (data) => {
+            console.error(`${data}`);
+        });
+    }
+    
     if (messageContent.startsWith('!fixchat')) {
         message.reply("Rebooting chat bot");
         console.log(getFullTimestamp() + " - Received !fixchat request from " + sender);
-        setTimeout(() => { process.exit(0); }, 500);  //Exit in 500 ms, allow time for reply to be sent
+        client.once;
+        //startSWGBot();
+        //setTimeout(() => { process.exit(0); }, 500);  //Exit in 500 ms, allow time for reply to be sent
     }
     if (messageContent.startsWith('!pausechat')) {
         message.reply(SWG.paused ? "Un-pausing chatbot" : "Pausing chatbot");

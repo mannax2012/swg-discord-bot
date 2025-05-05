@@ -35,6 +35,8 @@ module.exports.sendTell = function(player, message) {
 module.exports.recvTell = function(from, message) {}
 
 var lastMessageTime = new Date();
+
+
 function handleMessage(msg, info) {
     lastMessageTime = new Date();
     if (info.port == server.PingPort) return;
@@ -42,20 +44,40 @@ function handleMessage(msg, info) {
     try {
         var header = msg.readUInt16BE(0);
         packets = SOEProtocol.Decode(msg);
+        // If packets is not an array, convert it to an array with a single element
+        if (!Array.isArray(packets)) {
+            packets = [packets];
+        }
     } catch (ex) {
         console.log(getFullTimestamp() + " - Exception with header: " + header.toString(16).toUpperCase().padStart(4, 0))
         console.log(getFullTimestamp() + " - " + ex.toString());
         Login();
         return;
     }
-    if (!packets) return;
+
+    // Process packets once
+    processPackets(packets);
+}
+
+function processPackets(packets) {
+    // Check if packets is not an array
+    if (packets === undefined || !Array.isArray(packets)) {
+        //console.log("Invalid packets:", packets);
+        return;
+    }
     for (var packet of packets) {
-        if (verboseSWGLogging)
-            console.log(getFullTimestamp() + " - recv: " + packet.type);
-        if (handlePacket[packet.type])
-            handlePacket[packet.type](packet);
+        // Check if packet is defined and contains the type property
+        if (packet && packet.type) {
+            if (verboseSWGLogging)
+                console.log(getFullTimestamp() + " - recv: " + packet.type);
+            if (handlePacket[packet.type])
+                handlePacket[packet.type](packet);
+        } else {
+           // console.log("Invalid packet:", packet);
+        }
     }
 }
+
 
 var socket;
 var loggedIn;
